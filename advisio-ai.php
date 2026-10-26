@@ -1,9 +1,9 @@
 <?php
 /**
  * Plugin Name: Advisio AI
- * Description: Advisio AI chat service — Guided Commerce & Intelligent Support by JC-ITC.
- * Version: 4.2.0
- * Author: JC-ITC
+ * Description: Advisio AI chat service — Guided Commerce & Intelligent Support by Area 404.
+ * Version: 4.2.1
+ * Author: Area 404
  * Text Domain: advisio-ai
  */
 
@@ -11,15 +11,16 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'ADVISIO_AI_VERSION', '4.2.0' );
+define( 'ADVISIO_AI_VERSION', '4.2.1' );
 define( 'ADVISIO_AI_PLUGIN_FILE', __FILE__ );
 define( 'ADVISIO_AI_PLUGIN_BASENAME', plugin_basename( __FILE__ ) );
 define( 'ADVISIO_AI_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'ADVISIO_AI_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
+define( 'ADVISIO_AI_GITHUB_REPO', 'Kickeking/advisio-ai' );
 
 /**
  * Native GitHub Release Auto-Updater Class.
- * Strictly cached for 12 hours via WordPress transients and safely idle when no repository is configured.
+ * Hardcoded to the official repository and strictly cached for 12 hours via WordPress transients.
  */
 class Advisio_AI_GitHub_Updater {
 
@@ -32,10 +33,9 @@ class Advisio_AI_GitHub_Updater {
     public function __construct( $plugin_file ) {
         $this->plugin_file = $plugin_file;
         $this->plugin_slug = plugin_basename( $plugin_file );
-        $this->repo        = trim( (string) get_option( 'advisio_github_repo', '' ) );
+        $this->repo        = ADVISIO_AI_GITHUB_REPO;
         $this->token       = trim( (string) get_option( 'advisio_github_token', '' ) );
 
-        // Safe Idle State: Immediately bail out if repository is empty or invalid
         if ( empty( $this->repo ) || false === strpos( $this->repo, '/' ) ) {
             return;
         }
@@ -151,11 +151,11 @@ class Advisio_AI_GitHub_Updater {
         $info->name          = 'Advisio AI';
         $info->slug          = dirname( $this->plugin_slug );
         $info->version       = ltrim( $release->tag_name, 'vV' );
-        $info->author        = '<a href="https://github.com/' . esc_attr( $this->repo ) . '">JC-ITC</a>';
+        $info->author        = '<a href="https://github.com/' . esc_attr( $this->repo ) . '">Area 404</a>';
         $info->homepage      = 'https://github.com/' . $this->repo;
         $info->download_link = isset( $release->zipball_url ) ? $release->zipball_url : '';
         $info->sections      = array(
-            'description' => 'Advisio AI chat service — Guided Commerce & Intelligent Support by JC-ITC.',
+            'description' => 'Advisio AI chat service — Guided Commerce & Intelligent Support by Area 404.',
             'changelog'   => ! empty( $release->body ) ? nl2br( esc_html( $release->body ) ) : 'Latest release from GitHub.',
         );
 
@@ -352,8 +352,6 @@ class Advisio_AI {
         $settings = array(
             'advisio_language',
             'advisio_api_key',
-            'advisio_github_repo',
-            'advisio_github_token',
             'advisio_system_instruction',
             'advisio_negative_constraints',
             'advisio_target_goals',
@@ -770,7 +768,7 @@ class Advisio_AI {
                         <div class="advisio-brand-title" role="heading" aria-level="1">Advisio AI</div>
                         <span class="advisio-demo-badge">(DEMO)</span>
                     </div>
-                    <p class="subtitle">Advisio AI chat service — by JC-ITC</p>
+                    <p class="subtitle">Advisio AI chat service — by Area 404</p>
                 </div>
                 <div class="advisio-theme-toggle">
                     <label class="theme-switch" title="Switch Dark / Light Mode">
@@ -1158,43 +1156,6 @@ class Advisio_AI {
                                 </div>
                             <?php endif; ?>
                         </div>
-
-                        <!-- Built-In GitHub Release Auto-Updater (Password-Protected Developer Panel) -->
-                        <div class="advisio-card advisio-dev-lock-card">
-                            <div id="advisio-dev-gate" class="advisio-dev-gate">
-                                <div class="advisio-card-header-flex" style="align-items:center;">
-                                    <div>
-                                        <h2 style="margin:0;">🔒 Developer Update Channel (JC-ITC Only)</h2>
-                                        <p class="desc" style="margin:4px 0 0 0;">Protected developer configuration for GitHub Release Auto-Updates (12h transient cached).</p>
-                                    </div>
-                                    <div class="api-key-row" style="margin:0;">
-                                        <input type="password" id="advisio-dev-password-input" class="advisio-input" placeholder="Developer password..." style="width:190px;">
-                                        <button type="button" id="btn-unlock-dev-github" class="advisio-btn advisio-btn-secondary">🔓 Unlock</button>
-                                    </div>
-                                </div>
-                                <div id="advisio-dev-lock-msg"></div>
-                            </div>
-
-                            <div id="advisio-dev-github-panel" style="display:none; margin-top:16px; padding-top:16px; border-top:1px solid var(--border-color);">
-                                <h2>🔄 Built-In GitHub Release Auto-Updater (Developer Settings)</h2>
-                                <p class="desc">Connect Advisio AI to your GitHub repository to receive one-click release updates directly in <strong>WordPress Admin &rarr; Plugins</strong>. When left empty, this updater stays in a safe idle state with zero overhead.</p>
-                                <table class="form-table">
-                                    <tr>
-                                        <th>GitHub Repository</th>
-                                        <td>
-                                            <input type="text" name="advisio_github_repo" value="<?php echo esc_attr( get_option( 'advisio_github_repo', '' ) ); ?>" placeholder="e.g., username/advisio-ai" class="advisio-input" style="max-width:420px;">
-                                            <p class="desc" style="margin:4px 0 0 0;">Format: <code>owner/repository</code>. Leave blank to keep updater idle.</p>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <th>GitHub Personal Access Token</th>
-                                        <td>
-                                            <input type="password" name="advisio_github_token" value="<?php echo esc_attr( get_option( 'advisio_github_token', '' ) ); ?>" placeholder="ghp_... (Optional — only required for private repositories)" class="advisio-input" style="max-width:420px;">
-                                        </td>
-                                    </tr>
-                                </table>
-                            </div>
-                        </div>
                     </div>
 
                     <!-- ==========================================
@@ -1203,7 +1164,7 @@ class Advisio_AI {
                     <div id="tab-persona" class="advisio-tab-content">
                         <!-- Built-in Hardened Architecture Summary -->
                         <div class="advisio-card advisio-hierarchy-banner">
-                            <h2>🛡️ Active Core Guardrails: Support-First Psychology, Subpage Links &amp; Smart Chips</h2>
+                            <h2>🛡️ Active Core Guardrails: Support-First Psychology, Subpage Links &amp; Context-Locked Chips</h2>
                             <div class="advisio-guardrails-grid">
                                 <div class="guardrail-item">
                                     <strong>1. Initial Welcome Cleanliness</strong>
@@ -1214,12 +1175,12 @@ class Advisio_AI {
                                     <p>Answers customer questions helpfully and explicitly refers them to dedicated subpages/forms (Claims/Reklamation, Partnership, Terms, Guides, Products) with clickable links.</p>
                                 </div>
                                 <div class="guardrail-item">
-                                    <strong>3. One Question + Mandatory "Not Sure" Chip</strong>
-                                    <p>Asks strictly ONE guiding question per reply and always provides 2–4 context chips including <code>Inte säker</code> (or language equivalent) so the AI can assist if the user is unsure.</p>
+                                    <strong>3. Context-Locked Quick-Reply Chips</strong>
+                                    <p>Asks strictly ONE clear guiding question per reply and generates 2–3 direct, concrete answers to that exact question followed by <code>Inte säker</code>.</p>
                                 </div>
                                 <div class="guardrail-item">
                                     <strong>4. Smart Measurement Chips</strong>
-                                    <p>When asking for exact dimensions (Width &times; Height), never outputs fake number chips. Outputs <code>[ 📐 Hur mäter jag? | 🤔 Inte säker ]</code> alongside the persistent callback button.</p>
+                                    <p>When asking for exact dimensions (Width &times; Height), never outputs fake number chips. Outputs <code>[ Hur mäter jag? | Inte säker på måtten ]</code> alongside the persistent callback button.</p>
                                 </div>
                             </div>
                         </div>
@@ -1317,14 +1278,21 @@ class Advisio_AI {
                                 </table>
                             </div>
 
-                            <!-- Right Column: Real-Time Live Preview -->
-                            <div class="advisio-design-preview-container">
-                                <h3>⚡ Real-Time Live Preview</h3>
+                            <!-- Right Column: Real-Time Live Preview Stage -->
+                            <div class="advisio-card advisio-design-preview-container">
+                                <div class="advisio-preview-stage-header">
+                                    <h2>⚡ Real-Time Live Preview</h2>
+                                    <p class="desc">Updates header, bubbles, quick-reply chips, and floating launcher icon in real time.</p>
+                                </div>
                                 <div class="advisio-live-preview-box">
+                                    <!-- Top: Chat Window Mockup -->
                                     <div class="live-preview-chat-window" id="lp-window">
                                         <div class="lp-header" id="lp-header-bg">
-                                            <h4 id="lp-title"><?php echo esc_html( get_option( 'advisio_chat_title', 'Advisio AI Kundtjänst' ) ); ?></h4>
-                                            <span>&times;</span>
+                                            <div class="lp-header-brand">
+                                                <span class="lp-header-icon-badge" id="lp-header-icon"></span>
+                                                <h4 id="lp-title"><?php echo esc_html( get_option( 'advisio_chat_title', 'Advisio AI Kundtjänst' ) ); ?></h4>
+                                            </div>
+                                            <span class="lp-close-x">&times;</span>
                                         </div>
                                         <div class="lp-body">
                                             <!-- Initial welcome message without chips -->
@@ -1335,25 +1303,30 @@ class Advisio_AI {
                                             <div class="lp-msg user">
                                                 <div class="lp-bubble" id="lp-user-bubble">Jag letar efter ett 3-glas fönster.</div>
                                             </div>
-                                            <!-- AI response with measurement chips + Not sure + Callback -->
+                                            <!-- AI response with context-locked chips + Not sure + Callback -->
                                             <div class="lp-msg bot">
                                                 <div class="lp-bubble">Absolut! Vilka mått (bredd &times; höjd) behöver du på fönstret?</div>
                                             </div>
                                             <div class="lp-chips">
-                                                <span class="lp-chip">📐 Hur mäter jag?</span>
-                                                <span class="lp-chip">🤔 Inte säker</span>
+                                                <span class="lp-chip">Hur mäter jag?</span>
+                                                <span class="lp-chip">Inte säker på måtten</span>
                                                 <span class="lp-chip lp-chip-primary" id="lp-cb-chip"><?php echo esc_html( get_option( 'advisio_label_callback', '📞 Bli kontaktad av en säljare' ) ); ?></span>
                                             </div>
                                         </div>
                                         <div class="lp-footer">
                                             <input type="text" disabled placeholder="Skriv ditt meddelande...">
-                                            <button type="button" id="lp-send-btn">&#10148;</button>
+                                            <button type="button" id="lp-send-btn" aria-label="Send">&#10148;</button>
                                         </div>
                                     </div>
+
+                                    <!-- Bottom-Right: Dedicated Floating Launcher Preview Row (Never covered by chat window) -->
                                     <div class="lp-launcher-row">
-                                        <div class="lp-proactive-pill" id="lp-proactive-pill"><?php echo esc_html( get_option( 'advisio_proactive_text', 'Behöver du hjälp med mått eller fönsterval? 👋' ) ); ?></div>
-                                        <div class="lp-launcher-btn" id="lp-launcher">
-                                            <span id="lp-icon-render"></span>
+                                        <span class="lp-launcher-stage-label">Launcher Icon Preview</span>
+                                        <div class="lp-launcher-preview-cluster">
+                                            <div class="lp-proactive-pill" id="lp-proactive-pill"><?php echo esc_html( get_option( 'advisio_proactive_text', 'Behöver du hjälp med mått eller fönsterval? 👋' ) ); ?></div>
+                                            <div class="lp-launcher-btn" id="lp-launcher" title="Floating Launcher Button Preview">
+                                                <span id="lp-icon-render"></span>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -1365,45 +1338,61 @@ class Advisio_AI {
                          TAB 5: LEADS & DYNAMIC FORM BUILDER
                          ========================================== -->
                     <div id="tab-lead" class="advisio-tab-content">
+                        <!-- TOP ROW: 2-Column Symmetrical Grid (Notification Settings Left, Form Texts & Labels Right) -->
                         <div class="advisio-layout-split">
-                            <!-- Left Column: Notification Settings & Labels -->
+                            <!-- Left Card: Notification & Email Settings -->
                             <div class="advisio-card">
-                                <h2>✉️ Lead Notification &amp; Handover Settings</h2>
-                                <p class="desc">When a customer submits the lead form, Advisio AI automatically generates a <strong>3–4 bullet AI Conversation Summary</strong> and places it at the top of your notification email and inside the Admin Leads table below.</p>
+                                <h2>✉️ Notification &amp; Email Settings</h2>
+                                <p class="desc">Configure where captured lead alerts and automatic <strong>3–4 bullet AI Conversation Summaries</strong> are delivered.</p>
                                 <table class="form-table">
                                     <tr>
                                         <th>Notification Recipient Email</th>
                                         <td>
-                                            <input type="email" name="advisio_notify_email" value="<?php echo esc_attr( get_option( 'advisio_notify_email', get_option( 'admin_email' ) ) ); ?>" class="advisio-input">
+                                            <input type="email" name="advisio_notify_email" value="<?php echo esc_attr( get_option( 'advisio_notify_email', get_option( 'admin_email' ) ) ); ?>" class="advisio-input" placeholder="sales@yourdomain.se">
                                         </td>
                                     </tr>
+                                </table>
+                                <div class="advisio-info-callout">
+                                    <strong>🤖 Automatic AI Lead Handover Summary</strong>
+                                    <p>Whenever a customer submits the callback/quote form, Advisio AI summarizes their chat transcript into 3–4 concise bullet points (Needs, Product Specs, Width &times; Height, Key Questions) and places it at the top of your notification email and in the Leads table below.</p>
+                                </div>
+                            </div>
+
+                            <!-- Right Card: Form Texts & Labels -->
+                            <div class="advisio-card">
+                                <h2>🏷️ Form Texts &amp; Labels</h2>
+                                <p class="desc">Customize the customer-facing button and drawer text shown inside the chat widget.</p>
+                                <table class="form-table">
                                     <tr>
-                                        <th>Persistent Callback Button Label</th>
+                                        <th>Persistent Callback Button</th>
                                         <td>
                                             <input type="text" name="advisio_label_callback" id="advisio_label_callback" value="<?php echo esc_attr( get_option( 'advisio_label_callback', '📞 Bli kontaktad av en säljare' ) ); ?>" class="advisio-input">
                                         </td>
                                     </tr>
                                     <tr>
-                                        <th>Lead Form Drawer Header</th>
+                                        <th>Lead Form Header Text</th>
                                         <td>
                                             <input type="text" name="advisio_label_lead_header" id="advisio_label_lead_header" value="<?php echo esc_attr( get_option( 'advisio_label_lead_header', 'Fyll i dina uppgifter så återkommer en rådgivare:' ) ); ?>" class="advisio-input">
                                         </td>
                                     </tr>
                                     <tr>
-                                        <th>Submission Confirmation Text</th>
+                                        <th>Submission Success Message</th>
                                         <td>
                                             <input type="text" name="advisio_label_lead_success" value="<?php echo esc_attr( get_option( 'advisio_label_lead_success', 'Tack! En rådgivare kommer att kontakta dig inom kort.' ) ); ?>" class="advisio-input">
                                         </td>
                                     </tr>
                                 </table>
                             </div>
+                        </div>
 
-                            <!-- Right Column: Interactive Form Builder -->
+                        <!-- MIDDLE ROW: 2-Column Split Layout (Dynamic Field Builder Left, Live Lead Form Preview Right) -->
+                        <div class="advisio-lead-builder-split">
+                            <!-- Left Card: Dynamic Field Builder -->
                             <div class="advisio-card">
                                 <div class="advisio-card-header-flex">
                                     <div>
-                                        <h2>🛠️ Dynamic Lead Form Field Builder</h2>
-                                        <p class="desc">Add, remove, or reorder fields. Includes built-in <strong>Preferred Contact Method (✉️ Email / 📞 Phone)</strong> and Smart Progressive Profiling.</p>
+                                        <h2>🛠️ Dynamic Form Field Builder</h2>
+                                        <p class="desc">Configure custom input fields, placeholders, field types, and mandatory validation toggles.</p>
                                     </div>
                                     <button type="button" id="btn-add-lead-field" class="advisio-btn advisio-btn-primary">+ Add Form Field</button>
                                 </div>
@@ -1411,17 +1400,27 @@ class Advisio_AI {
                                 <input type="hidden" name="advisio_lead_form_fields" id="advisio_lead_form_fields_input" value="<?php echo esc_attr( $lead_fields_raw ); ?>">
 
                                 <div id="advisio-field-builder-list" class="advisio-field-builder-list"></div>
+                            </div>
 
-                                <div class="advisio-lead-preview-panel">
-                                    <h4>Live Lead Drawer Preview</h4>
-                                    <div class="advisio-lead-preview-inner">
-                                        <p id="lp-lead-header-text" style="font-weight:600; margin:0 0 8px 0;"><?php echo esc_html( get_option( 'advisio_label_lead_header', 'Fyll i dina uppgifter så återkommer en rådgivare:' ) ); ?></p>
-                                        <div class="lp-contact-method-preview">
-                                            <span>Preferred Contact:</span>
-                                            <span class="lp-pill active">✉️ Email</span>
-                                            <span class="lp-pill">📞 Phone</span>
+                            <!-- Right Card: Live Lead Form Preview -->
+                            <div class="advisio-card advisio-lead-preview-wrapper-card">
+                                <div class="advisio-preview-stage-header">
+                                    <h2>👁️ Live Lead Form Preview</h2>
+                                    <p class="desc">Real-time customer view of your callback &amp; quote form drawer.</p>
+                                </div>
+                                <div class="advisio-lead-preview-card">
+                                    <p id="lp-lead-header-text" class="lp-lead-drawer-title"><?php echo esc_html( get_option( 'advisio_label_lead_header', 'Fyll i dina uppgifter så återkommer en rådgivare:' ) ); ?></p>
+                                    <div class="lead-preview-contact-pref">
+                                        <span class="pref-label">Preferred contact method:</span>
+                                        <div class="pref-pills-row">
+                                            <span class="pref-pill active" id="lp-pref-pill-email">✉️ Email</span>
+                                            <span class="pref-pill">📞 Phone</span>
                                         </div>
-                                        <div id="advisio-lead-form-live-preview"></div>
+                                    </div>
+                                    <div id="advisio-lead-form-live-preview" class="advisio-lead-fields-preview-mount"></div>
+                                    <div class="lp-lead-actions-preview">
+                                        <button type="button" id="lp-lead-submit-btn" class="lp-lead-submit-btn" disabled>Skicka</button>
+                                        <button type="button" class="lp-lead-cancel-btn" disabled>Avbryt</button>
                                     </div>
                                 </div>
                             </div>
@@ -1491,7 +1490,7 @@ class Advisio_AI {
                     <div id="tab-docs" class="advisio-tab-content">
                         <div class="advisio-card">
                             <h2>📖 Advisio AI (DEMO) — Full System Documentation &amp; Operations Manual</h2>
-                            <p class="desc">Comprehensive reference guide for administrators managing the Advisio AI chat service — by JC-ITC.</p>
+                            <p class="desc">Comprehensive reference guide for administrators managing the Advisio AI chat service — by Area 404.</p>
                         </div>
 
                         <div class="advisio-docs-grid">
@@ -1503,7 +1502,7 @@ class Advisio_AI {
                                 <ul>
                                     <li><strong>0ms Local Retrieval:</strong> WordPress searches its indexed MySQL table (<code>wp_fg_ai_knowledge</code>) using multi-keyword tokenized relevance scoring in milliseconds.</li>
                                     <li><strong>Subpage &amp; Form Referencing:</strong> Each retrieved record injects <code>SOURCE TITLE | PAGE URL | CONTENT</code> so the AI answers questions and links visitors directly to subpages and forms.</li>
-                                    <li><strong>Hallucination Guard:</strong> API calls are locked at <code>temperature: 0.2</code> and <code>topP: 0.8</code> with a strict 12-second HTTP timeout.</li>
+                                    <li><strong>Hallucination Guard:</strong> API calls are locked at <code>temperature: 0.2</code> and <code>topP: 0.8</code> with a resilient 25-second HTTP timeout.</li>
                                 </ul>
                             </div>
 
@@ -1526,8 +1525,8 @@ class Advisio_AI {
                                 <p>Advisio AI follows a strict, calm conversational psychology:</p>
                                 <ul>
                                     <li><strong>Clean Initial Welcome:</strong> When the chat window first opens, only the warm welcome greeting is shown—no premature buttons or chips.</li>
-                                    <li><strong>One Question + Mandatory "Not Sure" Chip:</strong> After the customer writes, the AI asks one guiding question at a time and always includes <code>Inte säker</code> (or language equivalent) among the 2–4 quick-reply chips.</li>
-                                    <li><strong>Measurement Chips:</strong> When asking for Width &times; Height, it never renders fake number chips; instead it shows <code>[ 📐 Hur mäter jag? | 🤔 Inte säker ]</code> alongside the persistent callback button.</li>
+                                    <li><strong>Context-Locked Question Chips:</strong> After the customer writes, the AI asks one clear guiding question at a time and generates 2–3 direct, concrete answers to that exact question followed by <code>Inte säker</code> (or language equivalent).</li>
+                                    <li><strong>Measurement Chips:</strong> When asking for Width &times; Height, it never renders fake number chips; instead it shows <code>[ Hur mäter jag? | Inte säker på måtten ]</code> alongside the persistent callback button.</li>
                                 </ul>
                             </div>
 
@@ -1599,34 +1598,40 @@ class Advisio_AI {
     public static function get_frontend_chip_labels( $lang ) {
         $map = array(
             'Swedish'   => array(
-                'measure_help' => '📐 Hur mäter jag?',
-                'not_sure'     => '🤔 Inte säker',
-                'not_sure_raw' => 'Inte säker',
+                'measure_help'          => 'Hur mäter jag?',
+                'not_sure_measurements' => 'Inte säker på måtten',
+                'not_sure'              => 'Inte säker',
+                'not_sure_raw'          => 'Inte säker',
             ),
             'English'   => array(
-                'measure_help' => '📐 How do I measure?',
-                'not_sure'     => '🤔 Not sure',
-                'not_sure_raw' => 'Not sure',
+                'measure_help'          => 'How do I measure?',
+                'not_sure_measurements' => 'Not sure about dimensions',
+                'not_sure'              => 'Not sure',
+                'not_sure_raw'          => 'Not sure',
             ),
             'Norwegian' => array(
-                'measure_help' => '📐 Hvordan måler jeg?',
-                'not_sure'     => '🤔 Usikker',
-                'not_sure_raw' => 'Usikker',
+                'measure_help'          => 'Hvordan måler jeg?',
+                'not_sure_measurements' => 'Usikker på målene',
+                'not_sure'              => 'Usikker',
+                'not_sure_raw'          => 'Usikker',
             ),
             'Danish'    => array(
-                'measure_help' => '📐 Hvordan måler jeg?',
-                'not_sure'     => '🤔 Ikke sikker',
-                'not_sure_raw' => 'Ikke sikker',
+                'measure_help'          => 'Hvordan måler jeg?',
+                'not_sure_measurements' => 'Ikke sikker på målene',
+                'not_sure'              => 'Ikke sikker',
+                'not_sure_raw'          => 'Ikke sikker',
             ),
             'German'    => array(
-                'measure_help' => '📐 Wie messe ich richtig?',
-                'not_sure'     => '🤔 Nicht sicher',
-                'not_sure_raw' => 'Nicht sicher',
+                'measure_help'          => 'Wie messe ich richtig?',
+                'not_sure_measurements' => 'Bei den Maßen unsicher',
+                'not_sure'              => 'Nicht sicher',
+                'not_sure_raw'          => 'Nicht sicher',
             ),
             'Finnish'   => array(
-                'measure_help' => '📐 Miten mittaan?',
-                'not_sure'     => '🤔 En ole varma',
-                'not_sure_raw' => 'En ole varma',
+                'measure_help'          => 'Miten mittaan?',
+                'not_sure_measurements' => 'Epävarma mitoista',
+                'not_sure'              => 'En ole varma',
+                'not_sure_raw'          => 'En ole varma',
             ),
         );
         return isset( $map[ $lang ] ) ? $map[ $lang ] : $map['Swedish'];
@@ -1660,19 +1665,20 @@ class Advisio_AI {
         $chip_labels = self::get_frontend_chip_labels( $lang );
 
         wp_localize_script( 'advisio-chat-script', 'AdvisioChat', array(
-            'ajaxUrl'         => admin_url( 'admin-ajax.php' ),
-            'nonce'           => wp_create_nonce( 'advisio_chat_nonce' ),
-            'productId'       => ( function_exists( 'is_product' ) && is_product() ) ? get_the_ID() : 0,
-            'proactive'       => (int) get_option( 'advisio_proactive', 1 ),
-            'welcomeMsg'      => get_option( 'advisio_welcome_msg', 'Hej! Välkommen till vår kundtjänst. Hur kan jag hjälpa dig idag?' ),
-            'cbLabel'         => get_option( 'advisio_label_callback', '📞 Bli kontaktad av en säljare' ),
-            'leadHeader'      => get_option( 'advisio_label_lead_header', 'Fyll i dina uppgifter så återkommer en rådgivare:' ),
-            'leadSuccess'     => get_option( 'advisio_label_lead_success', 'Tack! En rådgivare kommer att kontakta dig inom kort.' ),
-            'leadFields'      => $lead_fields,
-            'measureHelpChip' => $chip_labels['measure_help'],
-            'notSureChip'     => $chip_labels['not_sure'],
-            'notSureRaw'      => $chip_labels['not_sure_raw'],
-            'language'        => $lang,
+            'ajaxUrl'                 => admin_url( 'admin-ajax.php' ),
+            'nonce'                   => wp_create_nonce( 'advisio_chat_nonce' ),
+            'productId'               => ( function_exists( 'is_product' ) && is_product() ) ? get_the_ID() : 0,
+            'proactive'               => (int) get_option( 'advisio_proactive', 1 ),
+            'welcomeMsg'              => get_option( 'advisio_welcome_msg', 'Hej! Välkommen till vår kundtjänst. Hur kan jag hjälpa dig idag?' ),
+            'cbLabel'                 => get_option( 'advisio_label_callback', '📞 Bli kontaktad av en säljare' ),
+            'leadHeader'              => get_option( 'advisio_label_lead_header', 'Fyll i dina uppgifter så återkommer en rådgivare:' ),
+            'leadSuccess'             => get_option( 'advisio_label_lead_success', 'Tack! En rådgivare kommer att kontakta dig inom kort.' ),
+            'leadFields'              => $lead_fields,
+            'measureHelpChip'         => $chip_labels['measure_help'],
+            'notSureMeasurementsChip' => $chip_labels['not_sure_measurements'],
+            'notSureChip'             => $chip_labels['not_sure'],
+            'notSureRaw'              => $chip_labels['not_sure_raw'],
+            'language'                => $lang,
         ) );
     }
 
@@ -1755,12 +1761,12 @@ class Advisio_AI {
     }
 
     /**
-     * Helper: Call Gemini API with strict gemini-3.5-flash-lite endpoint, fallback to gemini-3.5-flash, and strict 12s HTTP timeout.
+     * Helper: Call Gemini API with strict gemini-3.5-flash-lite endpoint, fallback to gemini-3.5-flash, and configurable HTTP timeout (default 25s).
      */
-    private function call_gemini_api( $api_key, $payload, $timeout = 12 ) {
+    private function call_gemini_api( $api_key, $payload, $timeout = 25 ) {
         $models      = array( 'gemini-3.5-flash-lite', 'gemini-3.5-flash' );
         $last_error  = 'Unknown API error';
-        $req_timeout = min( 12, max( 5, intval( $timeout ) ) );
+        $req_timeout = min( 30, max( 5, intval( $timeout ) ) );
 
         foreach ( $models as $model ) {
             $url = 'https://generativelanguage.googleapis.com/v1beta/models/' . $model . ':generateContent?key=' . rawurlencode( $api_key );
@@ -2997,10 +3003,11 @@ class Advisio_AI {
         }
 
         $full_system_instruction .=
-            "=== CONTEXT-AWARE QUICK-REPLY CHIPS (MANDATORY FORMAT) ===\n" .
-            "- At the end of EVERY response, you MUST include 2 to 4 contextually relevant quick-reply chips formatted EXACTLY like: [SUGGESTIONS: Option 1 | Option 2 | " . $chip_labels['not_sure_raw'] . "]\n" .
-            "- MANDATORY 'NOT SURE' OPTION: Whenever you ask a guiding question, ALWAYS include '" . $chip_labels['not_sure_raw'] . "' as the last suggestion chip.\n" .
-            "- WHEN ASKING FOR MEASUREMENTS: If you ask the customer for exact dimensions (Width x Height), NEVER output fake number chips or 'Fill in measurements'. Output ONLY these support chips: [SUGGESTIONS: " . $chip_labels['measure_help'] . " | " . $chip_labels['not_sure'] . "]\n\n" .
+            "=== CONTEXT-LOCKED QUICK-REPLY CHIPS (MANDATORY FORMAT) ===\n" .
+            "- At the end of your response, ask ONE clear guiding question. The `[SUGGESTIONS: Option 1 | Option 2 | Option 3 | " . $chip_labels['not_sure_raw'] . "]` tag you generate at the very end MUST contain 2–3 direct, concrete answers to that exact question, followed by '" . $chip_labels['not_sure_raw'] . "' (or equivalent in the active language).\n" .
+            "- Example 1: If you ask \"Vilken typ av fönster letar du efter?\", the chips MUST be `[SUGGESTIONS: Fast fönster | Öppningsbart (Vridfönster) | Altandörr | " . $chip_labels['not_sure_raw'] . "]`.\n" .
+            "- Example 2: If you ask \"Önskar du 2-glas eller 3-glas isolerglas?\", the chips MUST be `[SUGGESTIONS: 2-glas | 3-glas (Bäst isolering) | " . $chip_labels['not_sure_raw'] . "]`.\n" .
+            "- Example 3: If you ask for exact measurements (Width x Height), NEVER output fake number chips; output `[SUGGESTIONS: " . $chip_labels['measure_help'] . " | " . $chip_labels['not_sure_measurements'] . "]` so the customer can either type their numbers or click for help.\n\n" .
             "=== KNOWLEDGE BASE CONTEXT ===\n" .
             $context;
 
@@ -3035,7 +3042,7 @@ class Advisio_AI {
             ),
         );
 
-        $res = $this->call_gemini_api( $api_key, $payload, 12 );
+        $res = $this->call_gemini_api( $api_key, $payload, 25 );
         if ( ! $res['success'] ) {
             wp_send_json_error( $res['error'] );
         }

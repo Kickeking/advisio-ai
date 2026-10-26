@@ -173,31 +173,6 @@ jQuery(document).ready(function ($) {
 
     renderPerformanceChart('monthly');
 
-    // Developer Password Gate for GitHub Release Auto-Updater (Password: Kicke123)
-    function unlockDeveloperGithubPanel() {
-        const entered = $('#advisio-dev-password-input').val();
-        const msgBox = $('#advisio-dev-lock-msg');
-        if (entered === 'Kicke123') {
-            msgBox.html('<span class="advisio-badge success">✓ Developer access granted.</span>');
-            $('#advisio-dev-github-panel').slideDown(200);
-        } else {
-            msgBox.html('<span class="advisio-badge error">✕ Invalid developer password.</span>');
-            $('#advisio-dev-github-panel').slideUp(150);
-        }
-    }
-
-    $('#btn-unlock-dev-github').on('click', function (e) {
-        e.preventDefault();
-        unlockDeveloperGithubPanel();
-    });
-
-    $('#advisio-dev-password-input').on('keydown', function (e) {
-        if (e.key === 'Enter') {
-            e.preventDefault();
-            unlockDeveloperGithubPanel();
-        }
-    });
-
     // ==========================================
     // 4. 50-CHAT AI LEARNING ENGINE PROPOSALS
     // ==========================================
@@ -524,12 +499,15 @@ jQuery(document).ready(function ($) {
     const lpTitle = $('#lp-title');
     const lpWelcomeBubble = $('#lp-welcome-bubble');
     const lpHeaderBg = $('#lp-header-bg');
+    const lpHeaderIcon = $('#lp-header-icon');
     const lpLauncher = $('#lp-launcher');
     const lpUserBubble = $('#lp-user-bubble');
     const lpSendBtn = $('#lp-send-btn');
     const lpCbChip = $('#lp-cb-chip');
     const lpIconRender = $('#lp-icon-render');
     const lpProactivePill = $('#lp-proactive-pill');
+    const lpLeadSubmitBtn = $('#lp-lead-submit-btn');
+    const lpPrefPillEmail = $('#lp-pref-pill-email');
 
     if ($('.advisio-color-picker').length) {
         $('.advisio-color-picker').wpColorPicker({
@@ -594,6 +572,12 @@ jQuery(document).ready(function ($) {
             'border-color': primaryColor,
             'color': '#FFFFFF'
         });
+        if (lpLeadSubmitBtn.length) {
+            lpLeadSubmitBtn.css('background-color', primaryColor);
+        }
+        if (lpPrefPillEmail.length) {
+            lpPrefPillEmail.css('background-color', primaryColor);
+        }
 
         const headerColor = $('#preview_color_header').val() || '#1E293B';
         lpHeaderBg.css('background-color', headerColor);
@@ -611,7 +595,7 @@ jQuery(document).ready(function ($) {
             if (customUrl) {
                 iconHtml = '<img src="' + customUrl + '" alt="Icon" style="width:100%;height:100%;border-radius:50%;object-fit:cover;">';
             } else {
-                iconHtml = '<span style="font-size:10px;">IMG</span>';
+                iconHtml = '<svg fill="currentColor" viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/></svg>';
             }
         } else if (iconType === 'preset-2') {
             iconHtml = '<svg fill="currentColor" viewBox="0 0 24 24"><path d="M12 2L9.5 9.5 2 12l7.5 2.5L12 22l2.5-7.5L22 12l-7.5-2.5L12 2z"/></svg>';
@@ -623,6 +607,9 @@ jQuery(document).ready(function ($) {
             iconHtml = '<svg fill="currentColor" viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/></svg>';
         }
         lpIconRender.html(iconHtml);
+        if (lpHeaderIcon.length) {
+            lpHeaderIcon.html(iconHtml);
+        }
     }
 
     updateLivePreview();
@@ -661,34 +648,39 @@ jQuery(document).ready(function ($) {
             const isSelect = field.type === 'select';
             const row = $(
                 '<div class="advisio-builder-item" data-idx="' + idx + '">' +
-                '<div class="builder-row-grid">' +
-                '<div class="builder-col">' +
-                '<label>Field Label</label>' +
-                '<input type="text" class="advisio-input b-label" value="">' +
+                '<div class="builder-flex-bar">' +
+                '<div class="builder-col builder-col-label">' +
+                '<label class="builder-mini-label">Field Label</label>' +
+                '<input type="text" class="advisio-input b-label" placeholder="e.g. Namn">' +
                 '</div>' +
-                '<div class="builder-col">' +
-                '<label>Field Type</label>' +
+                '<div class="builder-col builder-col-type">' +
+                '<label class="builder-mini-label">Type</label>' +
                 '<select class="advisio-input b-type">' +
-                '<option value="text">Text Input</option>' +
-                '<option value="email">Email (Progressive)</option>' +
-                '<option value="tel">Phone (Tel)</option>' +
-                '<option value="textarea">Multi-line Textarea</option>' +
-                '<option value="select">Dropdown Select</option>' +
+                '<option value="text">Text</option>' +
+                '<option value="email">Email</option>' +
+                '<option value="tel">Phone</option>' +
+                '<option value="textarea">Textarea</option>' +
+                '<option value="select">Dropdown</option>' +
                 '</select>' +
                 '</div>' +
-                '<div class="builder-col">' +
-                '<label>Placeholder</label>' +
-                '<input type="text" class="advisio-input b-placeholder" value="">' +
+                '<div class="builder-col builder-col-placeholder">' +
+                '<label class="builder-mini-label">Placeholder</label>' +
+                '<input type="text" class="advisio-input b-placeholder" placeholder="Placeholder text...">' +
                 '</div>' +
-                '<div class="builder-col builder-col-actions">' +
-                '<label class="advisio-req-toggle">' +
-                '<input type="checkbox" class="b-required"> <span>Required</span>' +
+                '<div class="builder-col builder-col-req">' +
+                '<label class="builder-mini-label">Required</label>' +
+                '<label class="advisio-mini-switch" title="Toggle Required Field">' +
+                '<input type="checkbox" class="b-required">' +
+                '<span class="mini-slider"></span>' +
                 '</label>' +
-                '<button type="button" class="advisio-btn advisio-btn-reject b-remove" title="Remove Field">✕ Remove</button>' +
+                '</div>' +
+                '<div class="builder-col builder-col-del">' +
+                '<label class="builder-mini-label">&nbsp;</label>' +
+                '<button type="button" class="advisio-btn advisio-btn-reject b-remove" title="Delete Field">✕</button>' +
                 '</div>' +
                 '</div>' +
                 '<div class="builder-options-row" style="' + (isSelect ? 'display:block;' : 'display:none;') + '">' +
-                '<label>Dropdown Options (comma-separated, e.g., <em>Fönster, Altandörr, Helrenovering</em>)</label>' +
+                '<label class="builder-mini-label">Dropdown Options (comma-separated, e.g., <em>Fönster, Altandörr, Helrenovering</em>)</label>' +
                 '<input type="text" class="advisio-input b-options" value="">' +
                 '</div>' +
                 '</div>'
@@ -710,22 +702,29 @@ jQuery(document).ready(function ($) {
         if (!leadLivePreview.length) return;
         leadLivePreview.empty();
 
-        $('#lp-lead-header-text').text($('#advisio_label_lead_header').val() || 'Fyll i dina uppgifter:');
+        $('#lp-lead-header-text').text($('#advisio_label_lead_header').val() || 'Fyll i dina uppgifter så återkommer en rådgivare:');
 
         leadFields.forEach(function (field) {
-            const reqStar = field.required ? ' *' : '';
-            const ph = (field.placeholder || field.label || '') + reqStar;
-            let el;
-            if (field.type === 'textarea') {
-                el = $('<textarea class="advisio-input" rows="2" disabled></textarea>').attr('placeholder', ph);
-            } else if (field.type === 'select') {
-                el = $('<select class="advisio-input" disabled></select>');
-                el.append($('<option></option>').text(ph));
-            } else {
-                el = $('<input class="advisio-input" type="text" disabled>').attr('placeholder', ph);
+            const labelTxt = field.label || 'Field';
+            const ph = field.placeholder || labelTxt;
+            const fieldBlock = $('<div class="lp-lead-field-group"></div>');
+            const labelEl = $('<label class="lp-lead-field-label"></label>').text(labelTxt);
+            if (field.required) {
+                labelEl.append('<span class="lp-req-star"> *</span>');
             }
-            const wrap = $('<div style="margin-bottom:8px;"></div>').append(el);
-            leadLivePreview.append(wrap);
+            fieldBlock.append(labelEl);
+
+            let inputEl;
+            if (field.type === 'textarea') {
+                inputEl = $('<textarea class="lp-lead-preview-input" rows="2" disabled></textarea>').attr('placeholder', ph + (field.required ? ' *' : ''));
+            } else if (field.type === 'select') {
+                inputEl = $('<select class="lp-lead-preview-input" disabled></select>');
+                inputEl.append($('<option></option>').text(ph + (field.required ? ' *' : '')));
+            } else {
+                inputEl = $('<input class="lp-lead-preview-input" type="text" disabled>').attr('placeholder', ph + (field.required ? ' *' : ''));
+            }
+            fieldBlock.append(inputEl);
+            leadLivePreview.append(fieldBlock);
         });
     }
 

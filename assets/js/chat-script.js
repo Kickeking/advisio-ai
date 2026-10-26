@@ -261,52 +261,83 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     /**
-     * Context-Aware Quick-Reply Chip Rules:
-     * 1. When asking for exact dimensions (Width x Height), do NOT output fake number chips or "Fill in measurements".
-     *    Output ONLY [ 📐 Hur mäter jag? | 🤔 Inte säker ].
-     * 2. Whenever the AI asks a guiding question, guarantee that "Inte säker" (or localized equivalent) is included.
+     * Context-Locked Quick-Reply Chip Rules:
+     * 1. Inspects the guiding question at the end of the AI response.
+     * 2. Example 3 (Measurements): When asking for exact dimensions (Width x Height), outputs
+     *    [ Hur mäter jag? | Inte säker på måtten ] (localized) so the customer can type numbers or click for help.
+     * 3. Examples 1 & 2 (Specific Questions): Guarantees 2–3 direct, concrete answers to that exact question
+     *    followed by 'Inte säker' (or equivalent in the active language).
      */
     function normalizeContextSuggestions(botReplyText, suggestions) {
-        const measureHelpLabel = AdvisioChat.measureHelpChip || '📐 Hur mäter jag?';
-        const notSureLabel = AdvisioChat.notSureChip || '🤔 Inte säker';
+        const measureHelpLabel = AdvisioChat.measureHelpChip || 'Hur mäter jag?';
+        const notSureMeasurementsLabel = AdvisioChat.notSureMeasurementsChip || 'Inte säker på måtten';
+        const notSureLabel = AdvisioChat.notSureChip || 'Inte säker';
         const notSureRaw = (AdvisioChat.notSureRaw || 'Inte säker').toLowerCase();
 
+        // Extract the trailing question sentence from the AI reply
+        const sentences = String(botReplyText || '').split(/(?<=[.!?])\s+|\n+/);
+        let trailingQuestion = '';
+        for (let i = sentences.length - 1; i >= 0; i--) {
+            if (sentences[i] && sentences[i].indexOf('?') !== -1) {
+                trailingQuestion = sentences[i].trim();
+                break;
+            }
+        }
+        const targetQuestionText = trailingQuestion || String(botReplyText || '');
         const isQuestion = /\?/.test(botReplyText);
+
+        // Example 3: If the AI's question asks for exact measurements (Width x Height)
         const asksForMeasurements = isQuestion &&
-            /(\bmått|bredd|höjd|karmyttermått|modulmått|storlek|dimension|width|height|measurements?\b)/i.test(botReplyText);
+            /(\bmått|bredd|höjd|karmyttermått|modulmått|storlek|dimension|width|height|measurements?\b)/i.test(targetQuestionText);
 
         if (asksForMeasurements) {
-            return [measureHelpLabel, notSureLabel];
+            return [measureHelpLabel, notSureMeasurementsLabel];
         }
 
-        // Filter out any fake number chips or dummy "Enter measurements" chips
-        const dummyChipPattern = /^(ange mått|skriv mått|fyll i mått|skriv in mått|enter measurements|fill in measurements|input dimensions|mått bredd x höjd|\d+\s*x\s*\d+)/i;
+        // Filter out any fake number chips or generic meta-chips that don't answer a question
+        const dummyChipPattern = /^(ange mått|skriv mått|fyll i mått|skriv in mått|enter measurements|fill in measurements|input dimensions|mått bredd x höjd|\d+\s*x\s*\d+|kontakta kundtjänst|läs mer)$/i;
         let filtered = (Array.isArray(suggestions) ? suggestions : []).filter(function (chip) {
             if (!chip) return false;
             return !dummyChipPattern.test(chip.trim());
         });
 
-        // Ensure Mandatory "Not Sure" Option when a guiding question is asked
-        if (isQuestion) {
-            const hasNotSure = filtered.some(function (chip) {
-                const low = chip.toLowerCase();
-                return low.indexOf(notSureRaw) !== -1 ||
-                    low.indexOf('inte säker') !== -1 ||
-                    low.indexOf('not sure') !== -1 ||
-                    low.indexOf('usikker') !== -1 ||
-                    low.indexOf('ikke sikker') !== -1 ||
-                    low.indexOf('nicht sicher') !== -1;
-            });
+        // Separate concrete answer chips from any "Not sure" chip
+        const isNotSureChip = function (chip) {
+            const low = String(chip || '').toLowerCase();
+            return low.indexOf(notSureRaw) !== -1 ||
+                low.indexOf('inte säker') !== -1 ||
+                low.indexOf('not sure') !== -1 ||
+                low.indexOf('usikker') !== -1 ||
+                low.indexOf('ikke sikker') !== -1 ||
+                low.indexOf('nicht sicher') !== -1 ||
+                low.indexOf('epävarma') !== -1 ||
+                low.indexOf('en ole varma') !== -1;
+        };
 
-            if (!hasNotSure) {
-                if (filtered.length >= 4) {
-                    filtered = filtered.slice(0, 3);
-                }
-                filtered.push(notSureLabel);
+        let concreteAnswers = filtered.filter(function (chip) {
+            return !isNotSureChip(chip);
+        });
+
+        // Fallback synthesis if the AI asked a question but returned fewer than 2 concrete answers
+        if (isQuestion && concreteAnswers.length < 2) {
+            if (/(2-glas|3-glas|tvåglas|treglas|isolerglas|glastyp|u-värde|glazing)/i.test(targetQuestionText)) {
+                concreteAnswers = ['2-glas', '3-glas (Bäst isolering)'];
+            } else if (/(material|trä|aluminium|pvc|komposit)/i.test(targetQuestionText)) {
+                concreteAnswers = ['Trä/Aluminium', 'Träfönster', 'PVC'];
+            } else if (/(öppningsbar|fast|vridfönster|sidohängt|funktion)/i.test(targetQuestionText)) {
+                concreteAnswers = ['Fast fönster', 'Öppningsbart (Vridfönster)', 'Sidohängt'];
+            } else if (/(typ av fönster|vilket fönster|vilken produkt|letar du efter|söker du)/i.test(targetQuestionText)) {
+                concreteAnswers = ['Fast fönster', 'Öppningsbart (Vridfönster)', 'Altandörr'];
             }
         }
 
-        return filtered.slice(0, 4);
+        // Keep 2 to 3 direct, concrete answers, then append 'Inte säker' at the end
+        concreteAnswers = concreteAnswers.slice(0, 3);
+        if (isQuestion || concreteAnswers.length > 0) {
+            concreteAnswers.push(notSureLabel);
+        }
+
+        return concreteAnswers;
     }
 
     /**

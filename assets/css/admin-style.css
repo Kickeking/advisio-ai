@@ -249,15 +249,23 @@
     to { opacity: 1; transform: translateY(0); }
 }
 
-/* Cards */
+/* Cards — Standardized 24px Padding, 12px Border Radius & Symmetrical Stretching */
 .advisio-card {
     background: var(--bg-card);
     backdrop-filter: blur(12px);
     border: 1px solid var(--border-color);
-    border-radius: 14px;
+    border-radius: 12px;
     padding: 24px;
     margin-bottom: 24px;
     color: var(--text-main);
+    box-sizing: border-box;
+    box-shadow: 0 4px 18px rgba(0, 0, 0, 0.16);
+    display: flex;
+    flex-direction: column;
+}
+
+.advisio-admin-wrap.light-mode .advisio-card {
+    box-shadow: 0 2px 10px rgba(15, 23, 42, 0.04);
 }
 
 .advisio-card h2 {
@@ -291,19 +299,24 @@
     margin-bottom: 6px;
 }
 
-/* KPI Grid */
+/* KPI Grid — Symmetrical Equal-Height Cards */
 .advisio-kpi-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
     gap: 18px;
     margin-bottom: 24px;
+    align-items: stretch;
 }
 
 .advisio-kpi-card {
     background: var(--bg-card);
     border: 1px solid var(--border-color);
-    border-radius: 14px;
-    padding: 20px;
+    border-radius: 12px;
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    box-sizing: border-box;
 }
 
 .advisio-kpi-card.kpi-glow-card {
@@ -353,11 +366,18 @@
     color: var(--text-main);
 }
 
-/* Dual Top Inquiries — 2-Column Internal Grid */
+/* Symmetrical 2-Column Split Rows (Equal Card Heights) */
 .advisio-layout-split {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 24px;
+    align-items: stretch;
+    margin-bottom: 24px;
+}
+
+.advisio-layout-split > .advisio-card {
+    margin-bottom: 0;
+    height: 100%;
 }
 
 @media (max-width: 960px) {
@@ -608,6 +628,7 @@
     grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
     gap: 18px;
     margin-bottom: 16px;
+    align-items: stretch;
 }
 
 .indexer-scope-box {
@@ -891,56 +912,174 @@
     font-weight: 600;
 }
 
-/* Interactive Lead Form Field Builder (Tab 5) */
+/* ==========================================================
+   TAB 5: LEADS & DYNAMIC FORM BUILDER + LIVE PREVIEW
+   ========================================================== */
+.advisio-info-callout {
+    margin-top: auto;
+    padding: 14px 16px;
+    background: var(--bg-elevated);
+    border: 1px solid var(--border-color);
+    border-left: 3px solid #6366F1;
+    border-radius: 10px;
+}
+
+.advisio-info-callout strong {
+    display: block;
+    font-size: 13px;
+    color: var(--text-main);
+    margin-bottom: 4px;
+}
+
+.advisio-info-callout p {
+    margin: 0;
+    font-size: 12.5px;
+    color: var(--text-muted);
+    line-height: 1.5;
+}
+
+/* Middle Row: 2-Column Split Layout (1.2fr Builder Left, 1fr Preview Right) */
+.advisio-lead-builder-split {
+    display: grid;
+    grid-template-columns: 1.2fr 1fr;
+    gap: 28px;
+    align-items: start;
+    margin-bottom: 24px;
+}
+
+.advisio-lead-builder-split > .advisio-card {
+    margin-bottom: 0;
+}
+
+@media (max-width: 1080px) {
+    .advisio-lead-builder-split {
+        grid-template-columns: 1fr;
+    }
+}
+
 .advisio-field-builder-list {
     display: flex;
     flex-direction: column;
     gap: 12px;
-    margin-top: 14px;
+    margin-top: 16px;
 }
 
 .advisio-builder-item {
     background: var(--bg-elevated);
     border: 1px solid var(--border-color);
-    border-radius: 10px;
-    padding: 14px;
+    border-radius: 8px;
+    padding: 12px 16px;
+    transition: border-color 0.2s ease;
 }
 
-.builder-row-grid {
-    display: grid;
-    grid-template-columns: 1.2fr 1fr 1.2fr auto;
+.advisio-builder-item:hover {
+    border-color: rgba(99, 102, 241, 0.5);
+}
+
+.builder-flex-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
     gap: 12px;
-    align-items: end;
+    flex-wrap: nowrap;
 }
 
-@media (max-width: 900px) {
-    .builder-row-grid {
-        grid-template-columns: 1fr 1fr;
+@media (max-width: 780px) {
+    .builder-flex-bar {
+        flex-wrap: wrap;
     }
 }
 
-.builder-col label {
-    display: block;
-    font-size: 11.5px;
-    font-weight: 600;
-    color: var(--text-muted);
-    margin-bottom: 4px;
-}
-
-.builder-col-actions {
+.builder-col {
     display: flex;
-    align-items: center;
-    gap: 10px;
+    flex-direction: column;
 }
 
-.advisio-req-toggle {
-    display: inline-flex;
+.builder-col-label {
+    flex: 1.15;
+    min-width: 120px;
+}
+
+.builder-col-type {
+    flex: 0.9;
+    min-width: 110px;
+}
+
+.builder-col-placeholder {
+    flex: 1.35;
+    min-width: 140px;
+}
+
+.builder-col-req {
     align-items: center;
-    gap: 5px;
-    font-size: 12.5px;
-    color: var(--text-main);
+    justify-content: center;
+    min-width: 64px;
+}
+
+.builder-col-del {
+    align-items: center;
+    justify-content: center;
+}
+
+.builder-mini-label {
+    display: block;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    color: var(--text-muted);
+    margin-bottom: 5px;
+}
+
+/* Clean Toggle Switch for "Required" */
+.advisio-mini-switch {
+    position: relative;
+    display: inline-block;
+    width: 40px;
+    height: 22px;
+    margin-top: 4px;
+}
+
+.advisio-mini-switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.advisio-mini-switch .mini-slider {
+    position: absolute;
     cursor: pointer;
-    white-space: nowrap;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background-color: #475569;
+    transition: 0.25s;
+    border-radius: 999px;
+}
+
+.advisio-mini-switch .mini-slider:before {
+    position: absolute;
+    content: "";
+    height: 16px;
+    width: 16px;
+    left: 3px;
+    bottom: 3px;
+    background-color: #FFFFFF;
+    transition: 0.25s;
+    border-radius: 50%;
+}
+
+.advisio-mini-switch input:checked + .mini-slider {
+    background-color: #10B981;
+}
+
+.advisio-mini-switch input:checked + .mini-slider:before {
+    transform: translateX(18px);
+}
+
+.builder-col-del .b-remove {
+    padding: 7px 12px;
+    min-height: 36px;
+    font-size: 13px;
+    line-height: 1;
 }
 
 .builder-options-row {
@@ -949,36 +1088,37 @@
     border-top: 1px dashed var(--border-color);
 }
 
-.builder-options-row label {
-    display: block;
-    font-size: 12px;
-    color: var(--text-muted);
-    margin-bottom: 4px;
-}
-
-/* Live Lead Form Preview Card */
+/* Right Card: Realistic Customer-Facing Live Lead Form Preview */
 .advisio-lead-preview-card {
-    background: var(--bg-elevated);
+    background: #FFFFFF;
+    color: #0F172A;
+    border: 1px solid #E2E8F0;
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 10px 25px rgba(15, 23, 42, 0.14);
 }
 
-.lead-preview-header {
+.lp-lead-drawer-title {
     font-weight: 700;
     font-size: 14px;
-    margin: 0 0 12px 0;
+    color: #0F172A;
+    margin: 0 0 14px 0;
+    line-height: 1.4;
 }
 
 .lead-preview-contact-pref {
-    margin-bottom: 12px;
+    margin-bottom: 14px;
 }
 
-.lead-preview-contact-pref .pref-title {
+.lead-preview-contact-pref .pref-label {
     display: block;
     font-size: 12px;
-    color: var(--text-muted);
+    font-weight: 600;
+    color: #475569;
     margin-bottom: 6px;
 }
 
-.pref-pills {
+.pref-pills-row {
     display: flex;
     gap: 8px;
 }
@@ -986,26 +1126,94 @@
 .pref-pill {
     flex: 1;
     text-align: center;
-    padding: 6px 10px;
+    padding: 8px 12px;
     border-radius: 8px;
-    font-size: 12px;
+    font-size: 12.5px;
     font-weight: 600;
-    border: 1px solid var(--border-color);
-    background: var(--bg-input);
-    color: var(--text-muted);
+    border: 1px solid #CBD5E1;
+    background: #F8FAFC;
+    color: #475569;
 }
 
 .pref-pill.active {
     background: #6366F1;
     color: #FFFFFF;
-    border-color: #6366F1;
+    border-color: transparent;
 }
 
-/* Documentation Grid (Tab 6) */
+.advisio-lead-fields-preview-mount {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.lp-lead-field-group {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.lp-lead-field-label {
+    font-size: 12px;
+    font-weight: 600;
+    color: #334155;
+}
+
+.lp-req-star {
+    color: #F43F5E;
+    font-weight: 700;
+}
+
+.lp-lead-preview-input {
+    width: 100%;
+    box-sizing: border-box;
+    background: #F8FAFC !important;
+    border: 1px solid #CBD5E1 !important;
+    border-radius: 8px !important;
+    padding: 8px 11px !important;
+    font-size: 12.5px !important;
+    color: #334155 !important;
+}
+
+.lp-lead-actions-preview {
+    display: flex;
+    gap: 10px;
+    margin-top: 16px;
+}
+
+.lp-lead-submit-btn {
+    flex: 1;
+    background: #6366F1;
+    color: #FFFFFF;
+    border: none;
+    border-radius: 8px;
+    padding: 10px 16px;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: default;
+}
+
+.lp-lead-cancel-btn {
+    background: #F1F5F9;
+    color: #475569;
+    border: 1px solid #CBD5E1;
+    border-radius: 8px;
+    padding: 10px 16px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: default;
+}
+
+/* Documentation Grid (Tab 6) — Symmetrical Equal-Height Cards */
 .advisio-docs-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
     gap: 20px;
+    align-items: stretch;
+}
+
+.advisio-docs-grid > .advisio-card {
+    margin-bottom: 0;
 }
 
 .doc-card {
@@ -1094,11 +1302,18 @@
     margin-top: 4px;
 }
 
-/* Split-Screen Widget Design & Live Preview (Tab 4) */
+/* ==========================================================
+   TAB 4: WIDGET DESIGN & LIVE PREVIEW STAGE
+   ========================================================== */
 .advisio-split-design {
     display: grid;
-    grid-template-columns: 1fr 410px;
+    grid-template-columns: 1fr 420px;
     gap: 28px;
+    align-items: start;
+}
+
+.advisio-split-design > .advisio-card {
+    margin-bottom: 0;
 }
 
 @media (max-width: 1080px) {
@@ -1107,89 +1322,75 @@
     }
 }
 
-.advisio-design-preview-container h3 {
-    margin-top: 0;
-    color: var(--text-main);
-    font-size: 15px;
+.advisio-preview-stage-header h2 {
+    margin-bottom: 6px;
 }
 
+.advisio-preview-stage-header .desc {
+    margin-bottom: 16px;
+}
+
+/* Dedicated Flex/Column Stage so Chat Window sits cleanly at Top and Launcher sits visibly below Bottom-Right */
 .advisio-live-preview-box {
-    background: linear-gradient(135deg, #CBD5E1 0%, #E2E8F0 100%);
+    background: linear-gradient(145deg, #CBD5E1 0%, #E2E8F0 100%);
     border: 1px solid var(--border-color);
-    border-radius: 16px;
-    height: 540px;
-    position: relative;
-    overflow: hidden;
-    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.25);
-}
-
-.live-preview-launcher {
-    position: absolute;
-    bottom: 20px;
-    right: 20px;
-    width: 54px;
-    height: 54px;
-    border-radius: 50%;
-    background-color: #6366F1;
-    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.25);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: #FFFFFF;
-}
-
-.lp-proactive-pill {
-    position: absolute;
-    bottom: 28px;
-    right: 84px;
-    background: #FFFFFF;
-    color: #0F172A;
-    padding: 8px 14px;
     border-radius: 14px;
-    border-bottom-right-radius: 2px;
-    font-size: 11.5px;
-    font-weight: 600;
-    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.14);
-    max-width: 220px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
-.lp-icon {
-    width: 26px;
-    height: 26px;
+    padding: 20px;
     display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.lp-icon svg {
-    width: 100%;
-    height: 100%;
+    flex-direction: column;
+    align-items: stretch;
+    justify-content: space-between;
+    position: relative;
+    box-sizing: border-box;
+    box-shadow: inset 0 2px 8px rgba(15, 23, 42, 0.08);
 }
 
 .live-preview-chat-window {
-    position: absolute;
-    bottom: 86px;
-    right: 20px;
-    width: 340px;
-    height: 430px;
+    position: relative;
+    width: 100%;
+    height: 410px;
     background: #FFFFFF;
     border-radius: 14px;
-    box-shadow: 0 12px 32px rgba(15, 23, 42, 0.2);
+    box-shadow: 0 12px 28px rgba(15, 23, 42, 0.18);
     display: flex;
     flex-direction: column;
     overflow: hidden;
+    z-index: 5;
 }
 
 .lp-header {
     background: #1E293B;
     color: #FFFFFF;
-    padding: 13px 16px;
+    padding: 12px 16px;
     display: flex;
     justify-content: space-between;
     align-items: center;
+}
+
+.lp-header-brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.lp-header-icon-badge {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.16);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: #FFFFFF;
+    flex-shrink: 0;
+    overflow: hidden;
+}
+
+.lp-header-icon-badge svg,
+.lp-header-icon-badge img {
+    width: 15px;
+    height: 15px;
+    display: block;
 }
 
 .lp-header h4 {
@@ -1197,6 +1398,12 @@
     font-size: 14px;
     font-weight: 600;
     color: #FFFFFF;
+}
+
+.lp-close-x {
+    font-size: 18px;
+    line-height: 1;
+    opacity: 0.85;
 }
 
 .lp-body {
@@ -1223,7 +1430,7 @@
     padding: 9px 13px;
     border-radius: 14px;
     font-size: 12.5px;
-    line-height: 1.4;
+    line-height: 1.45;
 }
 
 .lp-msg.user .lp-bubble {
@@ -1242,42 +1449,131 @@
 .lp-chips {
     display: flex;
     flex-wrap: wrap;
-    gap: 5px;
-    margin-top: 6px;
+    gap: 6px;
+    margin-top: 4px;
 }
 
 .lp-chip {
     background: #FFFFFF;
     border: 1px solid #CBD5E1;
-    padding: 4px 9px;
+    padding: 5px 10px;
     border-radius: 999px;
     font-size: 11px;
     color: #334155;
-    font-weight: 500;
+    font-weight: 600;
 }
 
 .lp-footer {
-    padding: 10px 14px;
+    padding: 10px 12px;
     background: #FFFFFF;
     border-top: 1px solid #E2E8F0;
     display: flex;
     align-items: center;
-    justify-content: space-between;
+    gap: 8px;
 }
 
-.lp-footer span {
-    color: #94A3B8;
-    font-size: 12px;
+.lp-footer input {
+    flex: 1;
+    background: #F8FAFC !important;
+    border: 1px solid #E2E8F0 !important;
+    border-radius: 999px !important;
+    padding: 6px 12px !important;
+    font-size: 12px !important;
+    color: #64748B !important;
 }
 
-.lp-send {
-    width: 28px;
-    height: 28px;
-    background: #6366F1;
+#lp-send-btn {
+    width: 32px;
+    height: 32px;
     border-radius: 50%;
+    border: none;
+    background: #6366F1;
+    color: #FFFFFF;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    cursor: default;
+    flex-shrink: 0;
+}
+
+/* Floating Launcher Row — Positioned Cleanly Below Chat Window (Never Covered) */
+.lp-launcher-row {
+    margin-top: 16px;
+    align-self: flex-end;
+    position: relative;
+    z-index: 10;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+.lp-launcher-stage-label {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: #475569;
+    background: rgba(255, 255, 255, 0.75);
+    padding: 4px 9px;
+    border-radius: 6px;
+    border: 1px solid #CBD5E1;
+}
+
+.lp-launcher-preview-cluster {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-left: auto;
+}
+
+.lp-proactive-pill {
+    position: relative;
+    background: #FFFFFF;
+    color: #0F172A;
+    padding: 8px 12px;
+    border-radius: 14px;
+    border-bottom-right-radius: 3px;
+    font-size: 11.5px;
+    font-weight: 600;
+    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.14);
+    max-width: 195px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.lp-launcher-btn {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background-color: #6366F1;
+    box-shadow: 0 8px 20px rgba(15, 23, 42, 0.28);
     display: flex;
     align-items: center;
     justify-content: center;
+    color: #FFFFFF;
+    flex-shrink: 0;
+    overflow: hidden;
+    transition: transform 0.2s ease, background-color 0.2s ease;
+}
+
+#lp-icon-render {
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #FFFFFF;
+}
+
+#lp-icon-render svg,
+#lp-icon-render img {
+    width: 100%;
+    height: 100%;
+    display: block;
 }
 
 .advisio-switch-label {
