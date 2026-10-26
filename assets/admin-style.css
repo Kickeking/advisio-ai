@@ -1,0 +1,1290 @@
+/* ==========================================================
+   ADVISIO AI (DEMO) — ADMIN UI STYLESHEET (DARK & LIGHT MODES)
+   ========================================================== */
+
+.advisio-wp-notice-catcher {
+    clear: both;
+    margin: 0 20px 0 0;
+    padding: 0;
+}
+
+.advisio-admin-wrap {
+    --bg-main: #0B0F19;
+    --bg-card: rgba(17, 24, 39, 0.82);
+    --bg-elevated: #111827;
+    --bg-input: #1E293B;
+    --text-main: #F8FAFC;
+    --text-muted: #94A3B8;
+    --border-color: #1E293B;
+    --accent-indigo: #6366F1;
+    --accent-cyan: #06B6D4;
+    --accent-emerald: #10B981;
+    --accent-rose: #F43F5E;
+    --accent-glow: rgba(99, 102, 241, 0.45);
+
+    clear: both;
+    display: block;
+    position: relative;
+    z-index: 10;
+    box-sizing: border-box;
+    font-family: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background-color: var(--bg-main);
+    color: var(--text-main);
+    margin: 20px 20px 20px 0;
+    padding: 28px;
+    border-radius: 16px;
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.55);
+    min-height: 82vh;
+    transition: background-color 0.25s ease, color 0.25s ease;
+}
+
+/* Prevent stray 3rd-party notices from ever injecting inside our workspace */
+.advisio-admin-wrap .notice,
+.advisio-admin-wrap .updated,
+.advisio-admin-wrap .error,
+.advisio-admin-wrap .update-nag {
+    display: none !important;
+}
+
+.advisio-save-banner {
+    background: rgba(16, 185, 129, 0.14);
+    border: 1px solid rgba(16, 185, 129, 0.45);
+    color: #10B981;
+    padding: 12px 18px;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* Light Mode Variables (#FFFFFF high-contrast) */
+.advisio-admin-wrap.light-mode {
+    --bg-main: #FFFFFF;
+    --bg-card: #F8FAFC;
+    --bg-elevated: #F1F5F9;
+    --bg-input: #FFFFFF;
+    --text-main: #0F172A;
+    --text-muted: #475569;
+    --border-color: #CBD5E1;
+    --accent-glow: rgba(99, 102, 241, 0.18);
+    box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
+    border: 1px solid #E2E8F0;
+}
+
+/* Header & Branding */
+.advisio-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 18px;
+    margin-bottom: 22px;
+    flex-wrap: wrap;
+    gap: 15px;
+}
+
+.advisio-brand-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.advisio-header h1,
+.advisio-header .advisio-brand-title {
+    margin: 0;
+    font-size: 28px;
+    font-weight: 800;
+    line-height: 1.2;
+    letter-spacing: -0.02em;
+    background: linear-gradient(90deg, #6366F1, #06B6D4);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.advisio-demo-badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 0.05em;
+    background: rgba(6, 182, 212, 0.16);
+    color: #06B6D4;
+    border: 1px solid rgba(6, 182, 212, 0.55);
+    box-shadow: 0 0 14px rgba(6, 182, 212, 0.35);
+}
+
+.advisio-admin-wrap.light-mode .advisio-demo-badge {
+    background: rgba(99, 102, 241, 0.12);
+    color: #4F46E5;
+    border-color: rgba(99, 102, 241, 0.45);
+    box-shadow: none;
+}
+
+.advisio-header .subtitle {
+    margin: 6px 0 0 0;
+    color: var(--text-muted);
+    font-size: 14px;
+    font-weight: 500;
+}
+
+/* Theme Switcher */
+.advisio-theme-toggle {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: var(--bg-elevated);
+    padding: 8px 14px;
+    border-radius: 999px;
+    border: 1px solid var(--border-color);
+}
+
+.theme-switch {
+    position: relative;
+    display: inline-block;
+    width: 46px;
+    height: 24px;
+}
+
+.theme-switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.theme-switch .slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background-color: #334155;
+    transition: 0.3s;
+    border-radius: 24px;
+}
+
+.theme-switch .slider:before {
+    position: absolute;
+    content: "";
+    height: 18px;
+    width: 18px;
+    left: 3px;
+    bottom: 3px;
+    background-color: #FFFFFF;
+    transition: 0.3s;
+    border-radius: 50%;
+}
+
+.theme-switch input:checked + .slider {
+    background-color: #6366F1;
+}
+
+.theme-switch input:checked + .slider:before {
+    transform: translateX(22px);
+}
+
+.theme-label {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-main);
+}
+
+/* Navigation Tabs (6 Tabs) */
+.advisio-nav-tabs {
+    display: flex;
+    gap: 6px;
+    border-bottom: 1px solid var(--border-color);
+    margin-bottom: 24px;
+    flex-wrap: wrap;
+}
+
+.advisio-tab-btn {
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    padding: 11px 16px;
+    font-size: 13.5px;
+    font-weight: 600;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.advisio-tab-btn:hover {
+    color: var(--text-main);
+}
+
+.advisio-tab-btn.active {
+    color: #6366F1;
+    border-bottom: 2px solid #6366F1;
+    text-shadow: 0 0 12px var(--accent-glow);
+}
+
+.advisio-tab-pill {
+    background: #06B6D4;
+    color: #0B0F19;
+    font-size: 11px;
+    font-weight: 800;
+    padding: 2px 7px;
+    border-radius: 999px;
+    box-shadow: 0 0 10px rgba(6, 182, 212, 0.6);
+}
+
+.advisio-tab-content {
+    display: none;
+    animation: advisioTabFade 0.25s ease;
+}
+
+.advisio-tab-content.active {
+    display: block;
+}
+
+@keyframes advisioTabFade {
+    from { opacity: 0; transform: translateY(6px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* Cards */
+.advisio-card {
+    background: var(--bg-card);
+    backdrop-filter: blur(12px);
+    border: 1px solid var(--border-color);
+    border-radius: 14px;
+    padding: 24px;
+    margin-bottom: 24px;
+    color: var(--text-main);
+}
+
+.advisio-card h2 {
+    color: var(--text-main);
+    margin-top: 0;
+    font-size: 17px;
+    font-weight: 700;
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 12px;
+    margin-bottom: 14px;
+}
+
+.advisio-card .desc {
+    color: var(--text-muted);
+    font-size: 13.5px;
+    margin-bottom: 16px;
+    line-height: 1.55;
+}
+
+.advisio-card-header-flex {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+
+.advisio-card-header-flex h2 {
+    border-bottom: none;
+    padding-bottom: 0;
+    margin-bottom: 6px;
+}
+
+/* KPI Grid */
+.advisio-kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 18px;
+    margin-bottom: 24px;
+}
+
+.advisio-kpi-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 14px;
+    padding: 20px;
+}
+
+.advisio-kpi-card.kpi-glow-card {
+    border-color: rgba(6, 182, 212, 0.5);
+    box-shadow: 0 0 20px rgba(6, 182, 212, 0.12);
+}
+
+.advisio-kpi-card h4 {
+    margin: 0 0 10px 0;
+    font-size: 12px;
+    color: var(--text-muted);
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.kpi-value {
+    font-size: 30px;
+    font-weight: 800;
+    color: var(--text-main);
+    line-height: 1.1;
+}
+
+.kpi-sub-divider {
+    color: var(--text-muted);
+    font-weight: 400;
+    margin: 0 4px;
+}
+
+.kpi-week-val {
+    font-size: 22px;
+    color: #818CF8;
+}
+
+.kpi-value.text-emerald { color: #10B981; }
+.kpi-value.text-cyan { color: #06B6D4; }
+
+.kpi-caption {
+    margin-top: 8px;
+    font-size: 12px;
+    color: var(--text-muted);
+}
+
+.kpi-index-lines {
+    font-size: 12.5px;
+    line-height: 1.75;
+    color: var(--text-main);
+}
+
+/* Dual Top Inquiries — 2-Column Internal Grid */
+.advisio-layout-split {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+}
+
+@media (max-width: 960px) {
+    .advisio-layout-split {
+        grid-template-columns: 1fr;
+    }
+}
+
+.advisio-inquiries-2col-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+}
+
+@media (max-width: 640px) {
+    .advisio-inquiries-2col-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.advisio-inquiry-grid-item {
+    background: var(--bg-elevated);
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    padding: 12px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.advisio-empty-inquiries {
+    padding: 20px;
+    background: var(--bg-elevated);
+    border: 1px dashed var(--border-color);
+    border-radius: 10px;
+    color: var(--text-muted);
+    font-size: 13px;
+    text-align: center;
+}
+
+.advisio-empty-inquiries p {
+    margin: 0;
+}
+
+.advisio-metric-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+    font-size: 12.5px;
+    font-weight: 600;
+    color: var(--text-main);
+}
+
+.advisio-metric-count {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    padding: 2px 8px;
+    border-radius: 999px;
+    color: var(--text-main);
+    font-weight: 700;
+    font-size: 11.5px;
+}
+
+.advisio-metric-track {
+    width: 100%;
+    height: 7px;
+    background: var(--bg-card);
+    border-radius: 999px;
+    overflow: hidden;
+    border: 1px solid var(--border-color);
+}
+
+.advisio-metric-fill {
+    height: 100%;
+    border-radius: 999px;
+    transition: width 0.4s ease;
+}
+
+.advisio-metric-fill.fill-cyan {
+    background: linear-gradient(90deg, #06B6D4, #3B82F6);
+}
+
+.advisio-metric-fill.fill-indigo {
+    background: linear-gradient(90deg, #6366F1, #10B981);
+}
+
+/* Monthly / Yearly Performance Graph Switcher */
+.advisio-chart-switcher {
+    display: inline-flex;
+    gap: 8px;
+    background: var(--bg-elevated);
+    padding: 4px;
+    border-radius: 10px;
+    border: 1px solid var(--border-color);
+}
+
+.advisio-chart-mode-btn {
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    padding: 7px 14px;
+    border-radius: 7px;
+    font-size: 12.5px;
+    font-weight: 600;
+}
+
+.advisio-chart-mode-btn.active {
+    background: #6366F1;
+    color: #FFFFFF;
+    box-shadow: 0 2px 10px var(--accent-glow);
+}
+
+/* 50-Chat Autonomous Learning Proposals */
+.advisio-proposals-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 16px;
+    margin-top: 16px;
+}
+
+.advisio-proposal-card {
+    background: var(--bg-elevated);
+    border: 1px solid rgba(6, 182, 212, 0.4);
+    border-radius: 12px;
+    padding: 18px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+.proposal-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.proposal-badge {
+    background: rgba(6, 182, 212, 0.15);
+    color: #06B6D4;
+    border: 1px solid rgba(6, 182, 212, 0.35);
+    padding: 3px 10px;
+    border-radius: 999px;
+    font-size: 11.5px;
+    font-weight: 700;
+}
+
+.proposal-date {
+    font-size: 11.5px;
+    color: var(--text-muted);
+}
+
+.proposal-rationale {
+    font-size: 13px;
+    color: var(--text-muted);
+    margin: 0 0 12px 0;
+    line-height: 1.5;
+}
+
+.proposal-rule-box {
+    background: var(--bg-card);
+    border-left: 3px solid #6366F1;
+    padding: 10px 12px;
+    border-radius: 6px;
+    margin-bottom: 14px;
+}
+
+.proposal-rule-box strong {
+    display: block;
+    font-size: 11.5px;
+    text-transform: uppercase;
+    color: #818CF8;
+    margin-bottom: 4px;
+}
+
+.proposal-rule-box p {
+    margin: 0;
+    font-size: 13.5px;
+    color: var(--text-main);
+    line-height: 1.45;
+}
+
+.proposal-actions {
+    display: flex;
+    gap: 10px;
+}
+
+.advisio-empty-proposals {
+    padding: 18px;
+    background: var(--bg-elevated);
+    border-radius: 10px;
+    border: 1px dashed var(--border-color);
+    color: var(--text-muted);
+    font-size: 13.5px;
+}
+
+/* Concise Quick-Start 4-Card Grid */
+.advisio-quickstart-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+    gap: 16px;
+    margin-top: 12px;
+}
+
+.qs-card {
+    background: var(--bg-elevated);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 16px;
+}
+
+.qs-step {
+    display: inline-block;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: #06B6D4;
+    background: rgba(6, 182, 212, 0.12);
+    padding: 2px 8px;
+    border-radius: 999px;
+    margin-bottom: 8px;
+}
+
+.qs-card h4 {
+    margin: 0 0 6px 0;
+    font-size: 14.5px;
+    color: var(--text-main);
+}
+
+.qs-card p {
+    margin: 0;
+    font-size: 13px;
+    color: var(--text-muted);
+    line-height: 1.5;
+}
+
+/* Chart Container */
+.advisio-chart-container {
+    position: relative;
+    width: 100%;
+    padding: 10px 0;
+}
+
+/* Dual-Scope Indexer Grid & Detailed Delta Status Badges */
+.advisio-indexer-scopes-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 18px;
+    margin-bottom: 16px;
+}
+
+.indexer-scope-box {
+    background: var(--bg-elevated);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 18px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: 14px;
+}
+
+.indexer-scope-box.scope-universal {
+    border-color: rgba(16, 185, 129, 0.45);
+}
+
+.indexer-scope-box h4 {
+    margin: 0 0 8px 0;
+    font-size: 15px;
+    color: var(--text-main);
+}
+
+.indexer-scope-box p {
+    margin: 0;
+    font-size: 13px;
+    color: var(--text-muted);
+    line-height: 1.5;
+}
+
+.advisio-delta-badge-box {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-left: 3px solid #06B6D4;
+    padding: 9px 12px;
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-main);
+    margin-bottom: 12px;
+    line-height: 1.45;
+}
+
+.scope-btn-group {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.scope-btn-group .advisio-btn {
+    flex: 1;
+    min-width: 180px;
+}
+
+/* Highlighted AI Summary Box in Admin Leads Table */
+.advisio-ai-summary-box,
+.advisio-lead-summary-box {
+    background: rgba(99, 102, 241, 0.1);
+    border-left: 3px solid #6366F1;
+    padding: 10px 14px;
+    border-radius: 8px;
+    font-size: 13px;
+    line-height: 1.55;
+    color: var(--text-main);
+}
+
+/* Guardrails Banner & DONTs Card */
+.advisio-hierarchy-banner {
+    border-color: rgba(99, 102, 241, 0.45);
+}
+
+.advisio-guardrails-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 14px;
+}
+
+.guardrail-item {
+    background: var(--bg-elevated);
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    padding: 14px;
+}
+
+.guardrail-item strong {
+    display: block;
+    font-size: 13.5px;
+    color: #06B6D4;
+    margin-bottom: 6px;
+}
+
+.guardrail-item p {
+    margin: 0;
+    font-size: 12.5px;
+    color: var(--text-muted);
+    line-height: 1.5;
+}
+
+.advisio-dont-card {
+    border-left: 4px solid #F43F5E;
+}
+
+/* Forms, Inputs & Buttons */
+.advisio-field-label {
+    display: block;
+    font-weight: 600;
+    font-size: 13.5px;
+    margin-bottom: 6px;
+    color: var(--text-main);
+}
+
+.advisio-input,
+.advisio-textarea,
+.advisio-file-input {
+    background-color: var(--bg-input) !important;
+    border: 1px solid var(--border-color) !important;
+    color: var(--text-main) !important;
+    border-radius: 8px !important;
+    padding: 9px 12px !important;
+    width: 100%;
+    max-width: 100%;
+    font-family: inherit;
+    font-size: 13.5px;
+    box-sizing: border-box;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.advisio-input:focus,
+.advisio-textarea:focus {
+    border-color: #6366F1 !important;
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2) !important;
+    outline: none;
+}
+
+.api-key-row {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.api-key-row .advisio-input {
+    flex: 1;
+    min-width: 220px;
+}
+
+.advisio-upload-row {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 16px;
+    margin-top: 14px;
+    flex-wrap: wrap;
+}
+
+.advisio-btn {
+    background: #334155;
+    color: #F8FAFC;
+    border: 1px solid #475569;
+    padding: 9px 16px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+}
+
+.advisio-btn:hover {
+    background: #475569;
+}
+
+.advisio-btn-primary {
+    background: #6366F1;
+    border-color: #4F46E5;
+    color: #FFFFFF;
+}
+
+.advisio-btn-primary:hover {
+    background: #4F46E5;
+    box-shadow: 0 0 14px var(--accent-glow);
+}
+
+.advisio-btn-approve {
+    background: #10B981;
+    border-color: #059669;
+    color: #FFFFFF;
+    flex: 1;
+}
+
+.advisio-btn-approve:hover {
+    background: #059669;
+}
+
+.advisio-btn-reject {
+    background: rgba(244, 63, 94, 0.14);
+    border-color: #F43F5E;
+    color: #F43F5E;
+    flex: 1;
+}
+
+.advisio-btn-reject:hover {
+    background: #F43F5E;
+    color: #FFFFFF;
+}
+
+.advisio-btn-save {
+    background: #10B981 !important;
+    border-color: #059669 !important;
+    color: #FFFFFF !important;
+    font-size: 15px !important;
+    padding: 11px 28px !important;
+    border-radius: 10px !important;
+}
+
+.advisio-btn-save:hover {
+    background: #059669 !important;
+    box-shadow: 0 0 18px rgba(16, 185, 129, 0.45);
+}
+
+.advisio-save-wrapper {
+    margin-top: 24px;
+    padding-top: 20px;
+    border-top: 1px solid var(--border-color);
+    display: flex;
+    justify-content: flex-end;
+}
+
+/* Progress Bar & Status Badges */
+.advisio-progress-container {
+    width: 100%;
+    height: 12px;
+    background: var(--bg-input);
+    border-radius: 999px;
+    overflow: hidden;
+    margin: 14px 0;
+}
+
+.advisio-progress-bar {
+    height: 100%;
+    background: linear-gradient(90deg, #06B6D4, #6366F1);
+    width: 0%;
+    transition: width 0.35s ease;
+}
+
+.advisio-badge {
+    display: inline-block;
+    padding: 5px 12px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 600;
+    margin-top: 8px;
+    background: var(--bg-elevated);
+    border: 1px solid var(--border-color);
+    color: var(--text-main);
+}
+
+.advisio-badge.success {
+    background: rgba(16, 185, 129, 0.12);
+    color: #10B981;
+    border-color: #10B981;
+}
+
+.advisio-badge.error {
+    background: rgba(244, 63, 94, 0.12);
+    color: #F43F5E;
+    border-color: #F43F5E;
+}
+
+.fg-model-badge {
+    display: inline-block;
+    padding: 6px 14px;
+    border-radius: 999px;
+    background: rgba(16, 185, 129, 0.12);
+    color: #10B981;
+    border: 1px solid #10B981;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+/* Interactive Lead Form Field Builder (Tab 5) */
+.advisio-field-builder-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-top: 14px;
+}
+
+.advisio-builder-item {
+    background: var(--bg-elevated);
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    padding: 14px;
+}
+
+.builder-row-grid {
+    display: grid;
+    grid-template-columns: 1.2fr 1fr 1.2fr auto;
+    gap: 12px;
+    align-items: end;
+}
+
+@media (max-width: 900px) {
+    .builder-row-grid {
+        grid-template-columns: 1fr 1fr;
+    }
+}
+
+.builder-col label {
+    display: block;
+    font-size: 11.5px;
+    font-weight: 600;
+    color: var(--text-muted);
+    margin-bottom: 4px;
+}
+
+.builder-col-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.advisio-req-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 12.5px;
+    color: var(--text-main);
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.builder-options-row {
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px dashed var(--border-color);
+}
+
+.builder-options-row label {
+    display: block;
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-bottom: 4px;
+}
+
+/* Live Lead Form Preview Card */
+.advisio-lead-preview-card {
+    background: var(--bg-elevated);
+}
+
+.lead-preview-header {
+    font-weight: 700;
+    font-size: 14px;
+    margin: 0 0 12px 0;
+}
+
+.lead-preview-contact-pref {
+    margin-bottom: 12px;
+}
+
+.lead-preview-contact-pref .pref-title {
+    display: block;
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-bottom: 6px;
+}
+
+.pref-pills {
+    display: flex;
+    gap: 8px;
+}
+
+.pref-pill {
+    flex: 1;
+    text-align: center;
+    padding: 6px 10px;
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 600;
+    border: 1px solid var(--border-color);
+    background: var(--bg-input);
+    color: var(--text-muted);
+}
+
+.pref-pill.active {
+    background: #6366F1;
+    color: #FFFFFF;
+    border-color: #6366F1;
+}
+
+/* Documentation Grid (Tab 6) */
+.advisio-docs-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+    gap: 20px;
+}
+
+.doc-card {
+    position: relative;
+    overflow: hidden;
+}
+
+.doc-num {
+    display: inline-block;
+    font-size: 12px;
+    font-weight: 800;
+    color: #06B6D4;
+    background: rgba(6, 182, 212, 0.12);
+    border: 1px solid rgba(6, 182, 212, 0.35);
+    padding: 3px 10px;
+    border-radius: 999px;
+    margin-bottom: 10px;
+}
+
+.doc-card h3 {
+    margin: 0 0 10px 0;
+    font-size: 16px;
+    color: var(--text-main);
+}
+
+.doc-card p {
+    font-size: 13.5px;
+    color: var(--text-muted);
+    line-height: 1.55;
+}
+
+.doc-card ul {
+    margin: 10px 0 0 0;
+    padding-left: 18px;
+    color: var(--text-muted);
+    font-size: 13px;
+    line-height: 1.6;
+}
+
+.doc-card li {
+    margin-bottom: 8px;
+}
+
+.doc-card li strong {
+    color: var(--text-main);
+}
+
+/* Tables & Tags */
+.advisio-admin-wrap table.form-table th {
+    color: var(--text-main);
+    font-weight: 600;
+    width: 210px;
+}
+
+.advisio-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 10px;
+}
+
+.advisio-table th,
+.advisio-table td {
+    text-align: left;
+    padding: 12px;
+    border-bottom: 1px solid var(--border-color);
+    color: var(--text-main);
+    font-size: 13.5px;
+    vertical-align: top;
+}
+
+.advisio-table th {
+    color: var(--text-muted);
+    font-weight: 700;
+    text-transform: uppercase;
+    font-size: 11.5px;
+}
+
+.advisio-tag {
+    background: var(--bg-elevated);
+    border: 1px solid var(--border-color);
+    padding: 4px 10px;
+    border-radius: 999px;
+    font-size: 12px;
+    color: var(--text-main);
+    display: inline-block;
+    margin-top: 4px;
+}
+
+/* Split-Screen Widget Design & Live Preview (Tab 4) */
+.advisio-split-design {
+    display: grid;
+    grid-template-columns: 1fr 410px;
+    gap: 28px;
+}
+
+@media (max-width: 1080px) {
+    .advisio-split-design {
+        grid-template-columns: 1fr;
+    }
+}
+
+.advisio-design-preview-container h3 {
+    margin-top: 0;
+    color: var(--text-main);
+    font-size: 15px;
+}
+
+.advisio-live-preview-box {
+    background: linear-gradient(135deg, #CBD5E1 0%, #E2E8F0 100%);
+    border: 1px solid var(--border-color);
+    border-radius: 16px;
+    height: 540px;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.25);
+}
+
+.live-preview-launcher {
+    position: absolute;
+    bottom: 20px;
+    right: 20px;
+    width: 54px;
+    height: 54px;
+    border-radius: 50%;
+    background-color: #6366F1;
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.25);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #FFFFFF;
+}
+
+.lp-proactive-pill {
+    position: absolute;
+    bottom: 28px;
+    right: 84px;
+    background: #FFFFFF;
+    color: #0F172A;
+    padding: 8px 14px;
+    border-radius: 14px;
+    border-bottom-right-radius: 2px;
+    font-size: 11.5px;
+    font-weight: 600;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.14);
+    max-width: 220px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.lp-icon {
+    width: 26px;
+    height: 26px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.lp-icon svg {
+    width: 100%;
+    height: 100%;
+}
+
+.live-preview-chat-window {
+    position: absolute;
+    bottom: 86px;
+    right: 20px;
+    width: 340px;
+    height: 430px;
+    background: #FFFFFF;
+    border-radius: 14px;
+    box-shadow: 0 12px 32px rgba(15, 23, 42, 0.2);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.lp-header {
+    background: #1E293B;
+    color: #FFFFFF;
+    padding: 13px 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.lp-header h4 {
+    margin: 0;
+    font-size: 14px;
+    font-weight: 600;
+    color: #FFFFFF;
+}
+
+.lp-body {
+    flex: 1;
+    background: #F8FAFC;
+    padding: 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    overflow-y: auto;
+}
+
+.lp-msg {
+    display: flex;
+    width: 100%;
+    flex-direction: column;
+}
+
+.lp-msg.user { align-items: flex-end; }
+.lp-msg.bot { align-items: flex-start; }
+
+.lp-bubble {
+    max-width: 85%;
+    padding: 9px 13px;
+    border-radius: 14px;
+    font-size: 12.5px;
+    line-height: 1.4;
+}
+
+.lp-msg.user .lp-bubble {
+    background: #6366F1;
+    color: #FFFFFF;
+    border-bottom-right-radius: 4px;
+}
+
+.lp-msg.bot .lp-bubble {
+    background: #FFFFFF;
+    border: 1px solid #E2E8F0;
+    color: #1E293B;
+    border-bottom-left-radius: 4px;
+}
+
+.lp-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+    margin-top: 6px;
+}
+
+.lp-chip {
+    background: #FFFFFF;
+    border: 1px solid #CBD5E1;
+    padding: 4px 9px;
+    border-radius: 999px;
+    font-size: 11px;
+    color: #334155;
+    font-weight: 500;
+}
+
+.lp-footer {
+    padding: 10px 14px;
+    background: #FFFFFF;
+    border-top: 1px solid #E2E8F0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.lp-footer span {
+    color: #94A3B8;
+    font-size: 12px;
+}
+
+.lp-send {
+    width: 28px;
+    height: 28px;
+    background: #6366F1;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.advisio-switch-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+    color: var(--text-main);
+    font-size: 13.5px;
+}
