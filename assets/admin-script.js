@@ -1,5 +1,19 @@
 jQuery(document).ready(function ($) {
     const adminWrap = $('#advisio-admin-wrap');
+    if (!adminWrap.length) {
+        return; // Guard: Do not execute on non-Advisio admin pages
+    }
+
+    // Defensive fallback: Guaranteed non-null AdvisioAdmin object
+    const AdvisioAdmin = window.AdvisioAdmin || {
+        ajaxUrl: (typeof ajaxurl !== 'undefined' ? ajaxurl : '/wp-admin/admin-ajax.php'),
+        nonce: '',
+        homeUrl: '/',
+        monthlyStats: { labels: [], messages: [], leads: [] },
+        yearlyStats: { labels: [], messages: [], leads: [] },
+        manualList: [],
+        memoryStats: { total: 0, manual: 0, global_site: 0, content: 0, shop: 0, file: 0 }
+    };
     const themeCheckbox = $('#advisio-theme-checkbox');
     const themeLabel = $('#theme-label-text');
     let performanceChartInstance = null;
@@ -34,10 +48,14 @@ jQuery(document).ready(function ($) {
     // 2. TAB NAVIGATION & JUMP LINKS
     // ==========================================
     function activateTab(tabId) {
+        if (!tabId) return;
         $('.advisio-tab-btn').removeClass('active');
         $('.advisio-tab-btn[data-tab="' + tabId + '"]').addClass('active');
         $('.advisio-tab-content').removeClass('active');
         $('#' + tabId).addClass('active');
+        try {
+            sessionStorage.setItem('advisio_active_tab', tabId);
+        } catch (e) {}
     }
 
     $('.advisio-tab-btn').on('click', function (e) {
@@ -54,15 +72,28 @@ jQuery(document).ready(function ($) {
         }
     });
 
+    // Ensure initial active tab state is restored or defaults to tab-dashboard
+    try {
+        const savedTab = sessionStorage.getItem('advisio_active_tab');
+        if (savedTab && $('#' + savedTab).length) {
+            activateTab(savedTab);
+        } else {
+            activateTab('tab-dashboard');
+        }
+    } catch (e) {
+        activateTab('tab-dashboard');
+    }
+
     // ==========================================
     // 3. PERFORMANCE GRAPH (MONTHLY / YEARLY SWITCHER)
     // ==========================================
     function renderPerformanceChart(mode) {
-        currentChartMode = mode || 'monthly';
-        const canvas = document.getElementById('advisioMonthlyChart');
-        if (!canvas || typeof Chart === 'undefined') {
-            return;
-        }
+        try {
+            currentChartMode = mode || 'monthly';
+            const canvas = document.getElementById('advisioMonthlyChart');
+            if (!canvas || typeof Chart === 'undefined') {
+                return;
+            }
 
         const sourceData = (currentChartMode === 'yearly' && AdvisioAdmin.yearlyStats)
             ? AdvisioAdmin.yearlyStats
@@ -156,25 +187,87 @@ jQuery(document).ready(function ($) {
                 }
             }
         });
+    } catch (chartErr) {
+        console.error('[Advisio Admin] Chart render error:', chartErr);
+    }
+}
+
+    try {
+        $('.advisio-chart-mode-btn').on('click', function () {
+            const mode = $(this).data('chart-mode');
+            $('.advisio-chart-mode-btn').removeClass('active');
+            $(this).addClass('active');
+
+            if (mode === 'yearly') {
+                $('#advisio-chart-heading').text('📈 Performance Graph — Yearly View (Last 12 Months)');
+            } else {
+                $('#advisio-chart-heading').text('📈 Performance Graph — Monthly View (Last 30 Days)');
+            }
+            renderPerformanceChart(mode);
+        });
+
+        if (typeof Chart !== 'undefined') {
+            renderPerformanceChart('monthly');
+        } else {
+            setTimeout(function () {
+                if (typeof Chart !== 'undefined') {
+                    renderPerformanceChart('monthly');
+                }
+            }, 600);
+        }
+    } catch (e) {
+        console.error('[Advisio Admin] Chart mode setup error:', e);
     }
 
-    $('.advisio-chart-mode-btn').on('click', function () {
-        const mode = $(this).data('chart-mode');
-        $('.advisio-chart-mode-btn').removeClass('active');
-        $(this).addClass('active');
-
-        if (mode === 'yearly') {
-            $('#advisio-chart-heading').text('📈 Performance Graph — Yearly View (Last 12 Months)');
-        } else {
-            $('#advisio-chart-heading').text('📈 Performance Graph — Monthly View (Last 30 Days)');
-        }
-        renderPerformanceChart(mode);
+    // ==========================================
+    try {
+    // 4. API KEY TEST & VISIBILITY TOGGLE
+    // ==========================================
+    $('#toggle-api-key').on('click', function () {
+        const input = $('#advisio_api_key');
+        const type = input.attr('type') === 'password' ? 'text' : 'password';
+        input.attr('type', type);
+        $(this).text(type === 'password' ? '👁️' : '🙈');
     });
 
-    renderPerformanceChart('monthly');
+    $('#btn-test-api').on('click', function () {
+        const btn = $(this);
+        const apiKey = $('#advisio_api_key').val().trim();
+        const resDiv = $('#api-test-result');
 
-    // ==========================================
-    // 4. 50-CHAT AI LEARNING ENGINE PROPOSALS
+        if (!apiKey) {
+            resDiv.html('<span class="advisio-badge error">Please enter an API Key.</span>');
+            return;
+        }
+
+        btn.prop('disabled', true).text('Testing API Key...');
+        resDiv.html('<span class="advisio-badge">Testing connection to Gemini 3.5 Flash Lite...</span>');
+
+        $.post(AdvisioAdmin.ajaxUrl, {
+            action: 'advisio_test_api_key',
+            nonce: AdvisioAdmin.nonce,
+            api_key: apiKey
+        }, function (res) {
+            btn.prop('disabled', false).text('Save & Test API Key');
+            if (res && res.success) {
+                resDiv.html('<span class="advisio-badge success">✓ ' + $('<div>').text(res.data).html() + '</span>');
+            } else {
+                resDiv.html('<span class="advisio-badge error">✕ Error: ' + $('<div>').text((res && res.data) ? res.data : 'Failed to connect').html() + '</span>');
+            }
+        }).fail(function () {
+            btn.prop('disabled', false).text('Save & Test API Key');
+            resDiv.html('<span class="advisio-badge error">✕ Network error while verifying API key.</span>');
+        });
+    });
+
+    
+    } catch (secErr) {
+        console.error('[Advisio Admin Error in 4. API KEY TEST]:', secErr);
+    }
+
+// ==========================================
+    try {
+    // 5. 50-CHAT AI LEARNING ENGINE PROPOSALS
     // ==========================================
     $(document).on('click', '.advisio-btn-approve, .advisio-btn-reject', function () {
         const btn = $(this);
@@ -251,250 +344,568 @@ jQuery(document).ready(function ($) {
                     $('#advisio-proposals-grid').prepend(cardHtml);
                 });
 
-                const totalCards = $('#advisio-proposals-grid .advisio-proposal-card').length;
-                $('#kpi-pending-proposals').text(totalCards);
+                const newPending = $('#advisio-proposals-grid .advisio-proposal-card').length;
+                $('#kpi-pending-proposals').text(newPending);
+                const pill = $('.advisio-tab-pill');
+                if (newPending > 0) {
+                    pill.text(newPending).show();
+                }
             } else {
-                statusEl.html('<span class="advisio-badge error">Error: ' + ((res && res.data) ? res.data : 'Failed to generate proposals.') + '</span>');
-            }
-        }).fail(function () {
-            btn.prop('disabled', false).text('⚡ Analyze & Generate Proposals Now');
-            statusEl.html('<span class="advisio-badge error">Network error while contacting Gemini API.</span>');
-        });
-    });
-
-    // ==========================================
-    // 5. API KEY TEST & SHOW/HIDE
-    // ==========================================
-    $('#toggle-api-key').on('click', function () {
-        const input = $('#advisio_api_key');
-        input.attr('type', input.attr('type') === 'password' ? 'text' : 'password');
-    });
-
-    $('#btn-test-api').on('click', function () {
-        const key = $('#advisio_api_key').val();
-        const resDiv = $('#api-test-result');
-        resDiv.html('<span class="advisio-badge">Testing Gemini 3.5 Flash Lite connection...</span>');
-
-        $.post(AdvisioAdmin.ajaxUrl, {
-            action: 'advisio_test_api_key',
-            nonce: AdvisioAdmin.nonce,
-            api_key: key
-        }, function (res) {
-            if (res && res.success) {
-                resDiv.html('<span class="advisio-badge success">✓ ' + res.data + '</span>');
-            } else {
-                resDiv.html('<span class="advisio-badge error">✕ Error: ' + ((res && res.data) ? res.data : 'Connection failed') + '</span>');
+                statusEl.html('<span class="advisio-badge error">✕ ' + ((res && res.data) ? res.data : 'Analysis failed') + '</span>');
             }
         });
     });
 
     // ==========================================
-    // 6. CRASH-PROOF TWO-PHASE QUEUE DEEP INDEXER
-    //    Phase 1: advisio_get_index_queue (Fetch IDs)
-    //    Phase 2: advisio_process_index_batch (5 IDs per batch + up to 2 retries)
+    // 6. HELPER: UPDATE LIVE MEMORY STAT COUNTERS
     // ==========================================
-    $('.btn-trigger-index').on('click', function () {
+    function updateMemoryBadges(stats) {
+        if (!stats) return;
+        if (typeof stats.total !== 'undefined') $('#mem-stat-total').text(stats.total);
+        if (typeof stats.live !== 'undefined') $('#mem-stat-live').text(stats.live);
+        if (typeof stats.pending !== 'undefined') $('#mem-stat-pending').text(stats.pending);
+        if (typeof stats.content !== 'undefined' || typeof stats.global_site !== 'undefined') {
+            const cTotal = (parseInt(stats.content, 10) || 0) + (parseInt(stats.global_site, 10) || 0);
+            $('#mem-stat-content').text(cTotal);
+        }
+        if (typeof stats.shop !== 'undefined') $('#mem-stat-shop').text(stats.shop);
+        if (typeof stats.manual !== 'undefined') $('#mem-stat-manual').text(stats.manual);
+        if (typeof stats.global_site !== 'undefined') $('#mem-stat-global').text(stats.global_site);
+        if (typeof stats.file !== 'undefined') $('#mem-stat-file').text(stats.file);
+    }
+
+    
+    } catch (secErr) {
+        console.error('[Advisio Admin Error in 5. 50-CHAT AI LEARNING]:', secErr);
+    }
+
+// ==========================================
+    try {
+    // 7. 5-STAGE SEQUENTIAL DEEP CRAWLER
+    //    Accuracy over speed (1–3 items per batch)
+    // ==========================================
+    const stageLabels = {
+        1: 'Homepage',
+        2: 'Footer',
+        3: 'Menus',
+        4: 'Subpages',
+        5: 'Products'
+    };
+
+    let crawlCancelled = false;
+
+    $('#btn-stop-crawl').on('click', function (e) {
+        e.preventDefault();
+        crawlCancelled = true;
+        $('#crawl-current-item').text('Avbryter körning...');
+    });
+
+    const allCrawlBtns = $('#btn-crawl-website, #btn-quick-sync, #btn-crawl-shop, #btn-sync-shop, #btn-crawl-content, #btn-sync-content, .btn-trigger-index');
+
+    allCrawlBtns.on('click', function () {
         const btn = $(this);
-        const requestedScope = btn.data('scope'); // 'shop', 'content', or 'all'
-        const isIncremental = parseInt(btn.data('incremental'), 10) === 1;
-        const BATCH_SIZE = 5;
+        const btnId = btn.attr('id') || '';
+        const requestedScope = btn.data('scope') || 'all'; // 'shop', 'content', or 'all'
+        const isIncremental = btnId.indexOf('sync') !== -1 || parseInt(btn.data('incremental'), 10) === 1;
 
-        const scopesQueue = requestedScope === 'all' ? ['shop', 'content'] : [requestedScope];
-        $('.btn-trigger-index').prop('disabled', true);
-        $('#index-progress-container').show();
-        $('#index-progress-bar').css('width', '4%');
+        crawlCancelled = false;
+        const tracker = $('#advisio-crawl-tracker');
+        const progressBar = $('#crawl-progress-fill, #index-progress-bar');
+        const progressPct = $('#crawl-progress-text, #crawl-progress-pct');
+        const currentItem = $('#crawl-current-item');
+        const liveFeed = $('#crawl-live-feed');
+        const summaryBox = $('#crawl-summary');
+        const statusBadge = $('#persistent-idx-status, #crawl-current-item');
 
-        function updateScopeBadges(scope, data) {
-            if (scope === 'shop') {
-                if (data.badge_text) $('#shop-idx-badge').text(data.badge_text);
-                if (data.short_text) $('#dash-shop-idx').text(data.short_text);
-            } else {
-                if (data.badge_text) $('#content-idx-badge').text(data.badge_text);
-                if (data.short_text) $('#dash-content-idx').text(data.short_text);
-            }
-            if (typeof data.combined_total !== 'undefined' && data.combined_total > 0) {
-                $('#combined-idx-count').text(data.combined_total + ' indexed items');
-            }
+        allCrawlBtns.prop('disabled', true);
+        $('#btn-stop-crawl').show();
+        tracker.slideDown(250);
+        summaryBox.hide().empty();
+        liveFeed.empty();
+        progressBar.css('width', '2%');
+        progressPct.text('0%');
+        currentItem.text('Initializing 5-stage sequential crawler queue...');
+
+        // Reset stage tracker pills
+        $('.crawl-stage').removeClass('active completed');
+        for (let s = 1; s <= 5; s++) {
+            $('#crawl-stage-count-' + s).text('');
         }
 
-        function runNextScope() {
-            if (scopesQueue.length === 0) {
-                $('.btn-trigger-index').prop('disabled', false);
-                $('#index-progress-bar').css('width', '100%');
-                $('#persistent-idx-status').attr('class', 'advisio-badge success').text(
-                    '✓ Indexing complete (' + (isIncremental ? 'Quick Sync — New/Updated Only' : 'Full Deep Crawl') + ').'
-                );
-                setTimeout(function () {
-                    $('#index-progress-container').fadeOut(400);
-                }, 2200);
+        statusBadge.attr('class', 'advisio-badge').text('Phase 1: Building crawler queue for ' + requestedScope + ' (' + (isIncremental ? 'Quick Sync' : 'Full Deep Index') + ')...');
+
+        // Step 1: Discover queue
+        $.post(AdvisioAdmin.ajaxUrl, {
+            action: 'advisio_get_index_queue',
+            nonce: AdvisioAdmin.nonce,
+            scope: requestedScope,
+            incremental: isIncremental ? 1 : 0
+        }, function (queueRes) {
+            if (!queueRes || !queueRes.success || !queueRes.data) {
+                allCrawlBtns.prop('disabled', false); $('#btn-stop-crawl').hide();
+                statusBadge.attr('class', 'advisio-badge error').text('Error initializing queue: ' + ((queueRes && queueRes.data) ? queueRes.data : 'Server error.'));
+                currentItem.text('Failed to initialize crawler.');
                 return;
             }
 
-            const currentScope = scopesQueue.shift();
-            const scopeLabel = currentScope === 'shop' ? 'WooCommerce Shop' : 'Site Content & Footers';
+            const queueData = queueRes.data;
+            const fullQueue = Array.isArray(queueData.queue) ? queueData.queue : [];
+            const totalItems = fullQueue.length;
+            const stageCounts = queueData.stage_counts || {};
 
-            $('#persistent-idx-status').attr('class', 'advisio-badge').text(
-                'Phase 1: Discovering published IDs for ' + scopeLabel + '...'
-            );
-
-            // PHASE 1: Lightweight ID Discovery AJAX
-            $.post(AdvisioAdmin.ajaxUrl, {
-                action: 'advisio_get_index_queue',
-                nonce: AdvisioAdmin.nonce,
-                scope: currentScope,
-                incremental: isIncremental ? 1 : 0
-            }, function (queueRes) {
-                if (!queueRes || !queueRes.success || !queueRes.data) {
-                    $('.btn-trigger-index').prop('disabled', false);
-                    $('#persistent-idx-status').attr('class', 'advisio-badge error').text(
-                        'Error discovering IDs: ' + ((queueRes && queueRes.data) ? queueRes.data : 'Failed to build queue.')
-                    );
-                    return;
+            // Display counts on stages
+            for (let s = 1; s <= 5; s++) {
+                if (typeof stageCounts[s] !== 'undefined' && stageCounts[s] > 0) {
+                    $('#crawl-stage-count-' + s).text('(' + stageCounts[s] + ')');
                 }
-
-                const idQueue = Array.isArray(queueRes.data.ids) ? queueRes.data.ids : [];
-                const totalItems = idQueue.length;
-
-                // If 0 items need indexing (e.g., Quick Sync with no changes), update badge & advance
-                if (totalItems === 0) {
-                    updateScopeBadges(currentScope, queueRes.data);
-                    $('#index-progress-bar').css('width', '100%');
-                    $('#persistent-idx-status').text('Processed 0 of 0 items in ' + scopeLabel + ' (Already up to date).');
-                    runNextScope();
-                    return;
-                }
-
-                // PHASE 2: Micro-Batch Deep Extraction (Strictly 5 IDs per request + up to 2 retries)
-                function processMicroBatch(startIndex, retryCount) {
-                    const batchIds = idQueue.slice(startIndex, startIndex + BATCH_SIZE);
-                    const nextIndex = startIndex + batchIds.length;
-                    const isFinalBatch = nextIndex >= totalItems;
-
-                    $('#persistent-idx-status').attr('class', 'advisio-badge').text(
-                        'Processed ' + startIndex + ' of ' + totalItems + ' items in ' + scopeLabel +
-                        (retryCount > 0 ? ' (Retry ' + retryCount + '/2)...' : '...')
-                    );
-
-                    $.post(AdvisioAdmin.ajaxUrl, {
-                        action: 'advisio_process_index_batch',
-                        nonce: AdvisioAdmin.nonce,
-                        scope: currentScope,
-                        ids: JSON.stringify(batchIds),
-                        is_final: isFinalBatch ? 1 : 0,
-                        total_queued: totalItems
-                    }, function (batchRes) {
-                        if (batchRes && batchRes.success && batchRes.data) {
-                            const pct = Math.min(100, Math.round((nextIndex / totalItems) * 100));
-                            $('#index-progress-bar').css('width', pct + '%');
-                            $('#persistent-idx-status').text(
-                                'Processed ' + nextIndex + ' of ' + totalItems + ' items in ' + scopeLabel + ' (' + pct + '%)'
-                            );
-
-                            if (!isFinalBatch) {
-                                processMicroBatch(nextIndex, 0);
-                            } else {
-                                updateScopeBadges(currentScope, batchRes.data);
-                                runNextScope();
-                            }
-                        } else if (retryCount < 2) {
-                            setTimeout(function () {
-                                processMicroBatch(startIndex, retryCount + 1);
-                            }, 1000);
-                        } else {
-                            $('.btn-trigger-index').prop('disabled', false);
-                            $('#persistent-idx-status').attr('class', 'advisio-badge error').text(
-                                'Error at item ' + startIndex + ' of ' + totalItems + ': ' +
-                                ((batchRes && batchRes.data) ? batchRes.data : 'Batch failed after 2 retries.')
-                            );
-                        }
-                    }).fail(function () {
-                        if (retryCount < 2) {
-                            setTimeout(function () {
-                                processMicroBatch(startIndex, retryCount + 1);
-                            }, 1200);
-                        } else {
-                            $('.btn-trigger-index').prop('disabled', false);
-                            $('#persistent-idx-status').attr('class', 'advisio-badge error').text(
-                                'Network/Server timeout at item ' + startIndex + ' of ' + totalItems + ' after 2 retries.'
-                            );
-                        }
-                    });
-                }
-
-                processMicroBatch(0, 0);
-            }).fail(function () {
-                $('.btn-trigger-index').prop('disabled', false);
-                $('#persistent-idx-status').attr('class', 'advisio-badge error').text(
-                    'Failed to contact server for Phase 1 ID queue.'
-                );
-            });
-        }
-
-        runNextScope();
-    });
-
-    // ==========================================
-    // 7. MANUAL KNOWLEDGE & DIRECT FILE UPLOADER
-    // ==========================================
-    $('#btn-save-knowledge').on('click', function () {
-        const text = $('#advisio_manual_text').val();
-        const fileInput = document.getElementById('advisio_manual_file');
-        const statusDiv = $('#knowledge-save-status');
-
-        const fd = new FormData();
-        fd.append('action', 'advisio_upload_knowledge');
-        fd.append('nonce', AdvisioAdmin.nonce);
-        fd.append('manual_text', text);
-
-        if (fileInput && fileInput.files.length > 0) {
-            fd.append('file', fileInput.files[0]);
-        }
-
-        statusDiv.html('<span class="advisio-badge">Saving & indexing into scope=custom...</span>');
-
-        $.ajax({
-            url: AdvisioAdmin.ajaxUrl,
-            type: 'POST',
-            data: fd,
-            processData: false,
-            contentType: false,
-            success: function (res) {
-                if (res && res.success) {
-                    statusDiv.html('<span class="advisio-badge success">✓ ' + res.data + '</span>');
-                    if (fileInput && fileInput.files.length > 0) {
-                        fileInput.value = '';
-                        setTimeout(function () {
-                            location.reload();
-                        }, 900);
-                    }
-                } else {
-                    statusDiv.html('<span class="advisio-badge error">✕ Error: ' + ((res && res.data) ? res.data : 'Upload failed') + '</span>');
-                }
-            },
-            error: function () {
-                statusDiv.html('<span class="advisio-badge error">✕ Network error while uploading knowledge.</span>');
             }
+
+            if (totalItems === 0) {
+                // Already completely up to date
+                $('.crawl-stage').addClass('completed');
+                progressBar.css('width', '100%');
+                progressPct.text('100%');
+                currentItem.text('All content is fully up to date. No changes detected.');
+                statusBadge.attr('class', 'advisio-badge success').text('✓ Quick Sync: Knowledge base is already up to date.');
+                if (queueData.shop_badge) $('#shop-idx-badge').text(queueData.shop_badge);
+                if (queueData.content_badge) $('#content-idx-badge').text(queueData.content_badge);
+                if (queueData.combined_total) $('#combined-idx-count').text(queueData.combined_total + ' indexed items');
+                updateMemoryBadges(queueData.memory_stats);
+                if (queueData.last_index_stats) {
+                    const s = queueData.last_index_stats;
+                    $('#sync-stat-timestamp').text(s.timestamp || '');
+                    $('#sync-stat-type').text(s.sync_type || '');
+                    $('#sync-val-new').text(s.new_added || 0);
+                    $('#sync-val-updated').text(s.updated || 0);
+                    if (s.breakdown) {
+                        $('#sync-breakdown-gf').text(s.breakdown.startsida_footer || 0);
+                        $('#sync-breakdown-ms').text(s.breakdown.menyer_sidor || 0);
+                        $('#sync-breakdown-pk').text(s.breakdown.produkter || 0);
+                        $('#sync-breakdown-mf').text(s.breakdown.manuell_filer || 0);
+                    }
+                    $('#advisio-last-sync-card').slideDown(250);
+                }
+                allCrawlBtns.prop('disabled', false); $('#btn-stop-crawl').hide();
+                return;
+            }
+
+            let currentIndex = 0;
+            let currentStage = 0;
+            let hadErrors = false;
+            const BATCH_SIZE = 2; // Process 1-3 items per batch to avoid PHP memory exhaustion
+
+            function setStageActive(stage) {
+                if (stage === currentStage) return;
+                currentStage = stage;
+                $('.crawl-stage').each(function () {
+                    const st = parseInt($(this).data('stage'), 10);
+                    if (st < currentStage) {
+                        $(this).removeClass('active').addClass('completed');
+                    } else if (st === currentStage) {
+                        $(this).addClass('active').removeClass('completed');
+                    } else {
+                        $(this).removeClass('active completed');
+                    }
+                });
+            }
+
+            function processNextBatch() {
+                if (crawlCancelled) {
+                    allCrawlBtns.prop('disabled', false);
+                    $('#btn-stop-crawl').hide();
+                    currentItem.text('Körning avbruten av användaren.');
+                    return;
+                }
+                if (currentIndex >= totalItems) {
+                    return;
+                }
+
+                const batch = fullQueue.slice(currentIndex, currentIndex + BATCH_SIZE);
+                const nextIndex = currentIndex + batch.length;
+                const isFinal = nextIndex >= totalItems;
+
+                // Update active stage indicator
+                if (batch[0] && batch[0].s) {
+                    setStageActive(parseInt(batch[0].s, 10));
+                }
+
+                const activeStageName = stageLabels[currentStage] || ('Stage ' + currentStage);
+                currentItem.html('<strong>Stage ' + currentStage + ' (' + activeStageName + '):</strong> Crawling ' + $('<div>').text(batch[0].title || 'item').html() + '...');
+
+                $.post(AdvisioAdmin.ajaxUrl, {
+                    action: 'advisio_process_index_batch',
+                    nonce: AdvisioAdmin.nonce,
+                    items: JSON.stringify(batch),
+                    is_final: isFinal ? 1 : 0,
+                    had_errors: hadErrors ? 1 : 0
+                }, function (batchRes) {
+                    if (batchRes && batchRes.success && batchRes.data) {
+                        const bData = batchRes.data;
+                        const processed = bData.processed || [];
+
+                        // Add processed items to live feed (keep last 8)
+                        processed.forEach(function (p) {
+                            const note = p.note ? ' <span class="feed-note">(' + $('<div>').text(p.note).html() + ')</span>' : '';
+                            const chars = p.chars > 0 ? ' <span class="feed-chars">[' + p.chars + ' chars]</span>' : '';
+                            const li = $('<li><span class="feed-stage">Stage ' + p.stage + ':</span> <span class="feed-title">' + $('<div>').text(p.title).html() + '</span>' + chars + note + '</li>');
+                            liveFeed.prepend(li);
+                            if (liveFeed.children().length > 8) {
+                                liveFeed.children().last().remove();
+                            }
+                        });
+
+                        currentIndex = nextIndex;
+                        const pct = Math.min(100, Math.round((currentIndex / totalItems) * 100));
+                        progressBar.css('width', pct + '%');
+                        progressPct.text(pct + '%');
+                        statusBadge.text('Crawling ' + currentIndex + ' of ' + totalItems + ' items (' + pct + '%)...');
+
+                        if (!isFinal) {
+                            setTimeout(processNextBatch, 80);
+                        } else {
+                            // Completed!
+                            $('.crawl-stage').removeClass('active').addClass('completed');
+                            progressBar.css('width', '100%');
+                            progressPct.text('100%');
+                            currentItem.text('✓ 5-Stage Sequential Crawl completed successfully!');
+                            statusBadge.attr('class', 'advisio-badge success').text('✓ Indexing complete. ' + (bData.written_total || currentIndex) + ' items saved/verified.');
+
+                            if (bData.shop_badge) $('#shop-idx-badge').text(bData.shop_badge);
+                            if (bData.content_badge) $('#content-idx-badge').text(bData.content_badge);
+                            if (bData.shop_short) $('#dash-shop-idx').text(bData.shop_short);
+                            if (bData.content_short) $('#dash-content-idx').text(bData.content_short);
+                            if (bData.combined_total) $('#combined-idx-count').text(bData.combined_total + ' indexed items');
+                            updateMemoryBadges(bData.memory_stats);
+
+                            if (bData.last_index_stats) {
+                                const s = bData.last_index_stats;
+                                $('#sync-stat-timestamp').text(s.timestamp || '');
+                                $('#sync-stat-type').text(s.sync_type || '');
+                                $('#sync-val-new').text(s.new_added || 0);
+                                $('#sync-val-updated').text(s.updated || 0);
+                                if (s.breakdown) {
+                                    $('#sync-breakdown-gf').text(s.breakdown.startsida_footer || 0);
+                                    $('#sync-breakdown-ms').text(s.breakdown.menyer_sidor || 0);
+                                    $('#sync-breakdown-pk').text(s.breakdown.produkter || 0);
+                                    $('#sync-breakdown-mf').text(s.breakdown.manuell_filer || 0);
+                                }
+                                $('#advisio-last-sync-card').slideDown(250);
+                            }
+
+                            summaryBox.html(
+                                '<div class="summary-card">' +
+                                '<h4>✓ Crawl Run Summary:</h4>' +
+                                '<p>Items written/verified: <strong>' + (bData.written_total || currentIndex) + '</strong> | Stale pruned: <strong>' + (bData.pruned || 0) + '</strong> | Mode: <strong>' + (isIncremental ? 'Quick Sync' : 'Full Deep Index') + '</strong></p>' +
+                                '<p class="desc">Manual Knowledge entries and uploaded reference files were strictly preserved.</p>' +
+                                '</div>'
+                            ).slideDown(200);
+
+                            allCrawlBtns.prop('disabled', false); $('#btn-stop-crawl').hide();
+                        }
+                    } else {
+                        hadErrors = true;
+                        currentIndex = nextIndex;
+                        const pct = Math.min(100, Math.round((currentIndex / totalItems) * 100));
+                        progressBar.css('width', pct + '%');
+                        if (nextIndex < totalItems) {
+                            setTimeout(processNextBatch, 300);
+                        } else {
+                            allCrawlBtns.prop('disabled', false); $('#btn-stop-crawl').hide();
+                            statusBadge.attr('class', 'advisio-badge error').text('Completed with some batch warnings.');
+                        }
+                    }
+                }).fail(function () {
+                    hadErrors = true;
+                    currentIndex = nextIndex;
+                    if (nextIndex < totalItems) {
+                        setTimeout(processNextBatch, 500);
+                    } else {
+                        allCrawlBtns.prop('disabled', false); $('#btn-stop-crawl').hide();
+                        statusBadge.attr('class', 'advisio-badge error').text('Server network timeout during final micro-batch.');
+                    }
+                });
+            }
+
+            processNextBatch();
+        }).fail(function () {
+            allCrawlBtns.prop('disabled', false); $('#btn-stop-crawl').hide();
+            statusBadge.attr('class', 'advisio-badge error').text('Failed to contact server to build crawler queue.');
+            currentItem.text('Network error.');
         });
     });
 
-    $(document).on('click', '.btn-delete-doc', function () {
-        const docId = $(this).data('id');
-        const row = $('#custom-doc-row-' + docId);
-        $.post(AdvisioAdmin.ajaxUrl, {
-            action: 'advisio_delete_custom_doc',
-            nonce: AdvisioAdmin.nonce,
-            doc_id: docId
-        }, function (res) {
-            if (res && res.success) {
-                row.fadeOut(200, function () {
-                    $(this).remove();
+        
+    } catch (secErr) {
+        console.error('[Advisio Admin Error in 7. 5-STAGE SEQUENTIAL DEEP CRAWLER]:', secErr);
+    }
+
+// ==========================================
+    try {
+    // 8. UNIFIED CUSTOM KNOWLEDGE BASE (MANUAL TEXT & FILE UPLOADER) (TAB 2)
+    // ==========================================
+    const customTextId = $('#advisio_custom_text_id');
+    const customTextTitle = $('#advisio_custom_text_title');
+    const customTextContent = $('#advisio_custom_text_content');
+    const customFileInput = $('#custom_knowledge_file_input');
+    const fileDropzone = $('#advisio-file-dropzone, #dropzone-trigger');
+    const selectedFileName = $('#selected-file-name');
+    const fileSelectedStatus = $('#file-selected-status');
+    const btnClearFile = $('#btn-clear-file');
+    const btnAddCustom = $('#btn-add-custom-knowledge');
+    const customStatus = $('#custom-knowledge-status');
+
+    let selectedCustomFile = null;
+
+    function resetCustomForm() {
+        customTextId.val('');
+        customTextTitle.val('');
+        customTextContent.val('');
+        selectedCustomFile = null;
+        if (customFileInput.length) customFileInput.val('');
+        if (fileSelectedStatus.length) fileSelectedStatus.hide();
+        if (selectedFileName.length) selectedFileName.text('');
+        if (btnAddCustom.length) {
+            btnAddCustom.prop('disabled', false).html('<span>➕ Lägg till i Kunskapsbasen</span>');
+        }
+    }
+
+    if (btnClearFile.length) {
+        btnClearFile.on('click', function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+            selectedCustomFile = null;
+            if (customFileInput.length) customFileInput.val('');
+            if (fileSelectedStatus.length) fileSelectedStatus.hide();
+            if (selectedFileName.length) selectedFileName.text('');
+        });
+    }
+
+    // File Drag & Drop Handlers
+    if (fileDropzone.length) {
+        fileDropzone.on('click', function (e) {
+            if ($(e.target).closest('#btn-clear-file').length) return;
+            customFileInput.trigger('click');
+        });
+
+        fileDropzone.on('dragover dragenter', function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+            fileDropzone.addClass('drag-active');
+        });
+
+        fileDropzone.on('dragleave dragend drop', function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+            fileDropzone.removeClass('drag-active');
+        });
+
+        fileDropzone.on('drop', function (e) {
+            const files = e.originalEvent.dataTransfer.files;
+            if (files && files.length) {
+                handleFileSelection(files[0]);
+            }
+        });
+    }
+
+    if (customFileInput.length) {
+        customFileInput.on('change', function () {
+            if (this.files && this.files.length) {
+                handleFileSelection(this.files[0]);
+            }
+        });
+    }
+
+    function handleFileSelection(file) {
+        const ext = file.name.split('.').pop().toLowerCase();
+        if (!['txt', 'md', 'csv', 'json'].includes(ext)) {
+            alert('Endast .txt, .md, .csv och .json filer stöds.');
+            return;
+        }
+        if (file.size > 5 * 1024 * 1024) {
+            alert('Filen är för stor (max 5 MB).');
+            return;
+        }
+        selectedCustomFile = file;
+        selectedFileName.text(file.name + ' (' + Math.round(file.size / 1024) + ' KB)');
+        fileSelectedStatus.show();
+    }
+
+    // Submit Custom Knowledge (Text or File)
+    if (btnAddCustom.length) {
+        btnAddCustom.on('click', function (e) {
+            e.preventDefault();
+
+            const textContent = $.trim(customTextContent.val());
+            const textTitle = $.trim(customTextTitle.val());
+
+            if (!selectedCustomFile && !textContent) {
+                alert('Vänligen skriv in kunskapstext eller välj en referensfil att lägga till.');
+                customTextContent.focus();
+                return;
+            }
+
+            btnAddCustom.prop('disabled', true).html('<span>⏳ Sparar till kunskapsbasen...</span>');
+            customStatus.html('<span class="advisio-loading-inline">Bearbetar och lagrar i kunskapsbasen...</span>');
+
+            if (selectedCustomFile) {
+                // Upload file via FormData
+                const formData = new FormData();
+                formData.append('action', 'advisio_upload_custom_file');
+                formData.append('nonce', AdvisioAdmin.nonce);
+                formData.append('file', selectedCustomFile);
+
+                $.ajax({
+                    url: AdvisioAdmin.ajaxUrl,
+                    type: 'POST',
+                    data: formData,
+                    processData: false,
+                    contentType: false,
+                    dataType: 'json'
+                }).done(function (res) {
+                    handleSaveSuccess(res);
+                }).fail(function () {
+                    btnAddCustom.prop('disabled', false).html('<span>➕ Lägg till i Kunskapsbasen</span>');
+                    customStatus.html('<span class="advisio-status-error">✗ Nätverksfel vid filuppladdning.</span>');
+                });
+            } else {
+                // Save text
+                $.post(AdvisioAdmin.ajaxUrl, {
+                    action: 'advisio_save_custom_knowledge',
+                    nonce: AdvisioAdmin.nonce,
+                    id: customTextId.val(),
+                    title: textTitle,
+                    content: textContent
+                }, function (res) {
+                    handleSaveSuccess(res);
+                }).fail(function () {
+                    btnAddCustom.prop('disabled', false).html('<span>➕ Lägg till i Kunskapsbasen</span>');
+                    customStatus.html('<span class="advisio-status-error">✗ Nätverksfel vid sparning.</span>');
                 });
             }
         });
+    }
+
+    function handleSaveSuccess(res) {
+        if (res && res.success) {
+            const item = res.data.item;
+            const status = item.status || 'pending';
+            customStatus.html('<span class="advisio-status-success">✓ ' + (status === 'live' ? 'Kunskap tillagd och LIVE direkt!' : 'Kunskap sparad! (Väntar på att aktiveras via The Brain)') + '</span>');
+            resetCustomForm();
+            setTimeout(function () {
+                customStatus.fadeOut(400, function () { $(this).empty().show(); });
+            }, 4000);
+
+            // Update stats badges
+            if (res.data.stats) {
+                updateMemoryBadges(res.data.stats);
+            }
+
+            // Append item row to target list
+            appendCustomItemToUI(item);
+        } else {
+            btnAddCustom.prop('disabled', false).html('<span>➕ Lägg till i Kunskapsbasen</span>');
+            const err = res && res.data ? res.data : 'Kunde inte spara kunskap.';
+            customStatus.html('<span class="advisio-status-error">✗ ' + err + '</span>');
+        }
+    }
+
+    function appendCustomItemToUI(item) {
+        const targetList = $('#advisio-live-knowledge-list');
+        const countPill = $('#live-knowledge-count-pill');
+
+        targetList.find('.no-items-placeholder').remove();
+
+        const typeLabel = item.type === 'file' ? 'Fil' : 'Text';
+        const itemHtml = $(
+            '<div class="advisio-custom-item item-live" id="live-item-' + item.id + '">' +
+            '<div class="advisio-custom-item-head">' +
+            '<div class="head-left">' +
+            '<span class="custom-type-pill badge-success">' + typeLabel + '</span>' +
+            '<strong class="custom-item-title">' + $('<div>').text(item.title).html() + '</strong>' +
+            '</div>' +
+            '<div class="head-actions">' +
+            '<button type="button" class="advisio-btn advisio-btn-reject advisio-btn-sm btn-delete-custom-item" data-id="' + item.id + '">🗑️ Ta bort</button>' +
+            '</div>' +
+            '</div>' +
+            '<div class="advisio-custom-item-body">' +
+            '<span class="preview-text">' + $('<div>').text(item.content ? item.content.substring(0, 180) + (item.content.length > 180 ? '...' : '') : '').html() + '</span>' +
+            '</div>' +
+            '</div>'
+        );
+
+        targetList.prepend(itemHtml);
+
+        const currentCount = targetList.children('.advisio-custom-item').length;
+        countPill.text(currentCount + ' sparade');
+    }
+
+    // Delete Custom Item
+    $(document).on('click', '.btn-delete-custom-item', function (e) {
+        e.preventDefault();
+        const btn = $(this);
+        const id = btn.data('id');
+        if (!id) return;
+
+        if (!confirm('Är du säker på att du vill ta bort denna kunskapspost?')) {
+            return;
+        }
+
+        btn.prop('disabled', true).text('⏳...');
+
+        $.post(AdvisioAdmin.ajaxUrl, {
+            action: 'advisio_delete_custom_knowledge',
+            nonce: AdvisioAdmin.nonce,
+            id: id
+        }, function (res) {
+            if (res && res.success) {
+                const itemRow = btn.closest('.advisio-custom-item');
+                const parentList = itemRow.parent();
+                itemRow.fadeOut(250, function () {
+                    $(this).remove();
+                    const remaining = parentList.children('.advisio-custom-item').length;
+                    $('#live-knowledge-count-pill').text(remaining + ' sparade');
+                    if (remaining === 0) {
+                        parentList.html('<p class="desc no-items-placeholder">Ingen sparad manuell kunskap än. Skriv eller ladda upp information till vänster för att lägga till i minnesbanken.</p>');
+                    }
+                });
+
+                if (res.data && res.data.stats) {
+                    updateMemoryBadges(res.data.stats);
+                }
+            } else {
+                btn.prop('disabled', false).text('🗑️ Ta bort');
+                alert(res && res.data ? res.data : 'Kunde inte ta bort posten.');
+            }
+        }).fail(function () {
+            btn.prop('disabled', false).text('🗑️ Ta bort');
+            alert('Nätverksfel vid borttagning.');
+        });
     });
 
-    // ==========================================
-    // 8. WIDGET DESIGN & REAL-TIME LIVE PREVIEW
+    function updateMemoryBadges(stats) {
+        if (!stats) return;
+        if (typeof stats.total !== 'undefined') $('#mem-stat-total').text(stats.total);
+        if (typeof stats.live !== 'undefined') $('#mem-stat-live').text(stats.live);
+        if (typeof stats.manual !== 'undefined') {
+            $('#mem-stat-manual').text(stats.manual);
+            $('#mem-stat-pending').text(stats.manual);
+        } else if (typeof stats.pending !== 'undefined') {
+            $('#mem-stat-pending').text(stats.pending);
+        }
+        if (typeof stats.content !== 'undefined' || typeof stats.global_site !== 'undefined') {
+            const cTotal = (parseInt(stats.content, 10) || 0) + (parseInt(stats.global_site, 10) || 0);
+            $('#mem-stat-content').text(cTotal);
+        }
+        if (typeof stats.shop !== 'undefined') $('#mem-stat-shop').text(stats.shop);
+    }
+
+    } catch (secErr) {
+        console.error('[Advisio Admin Error in 8. UNIFIED CUSTOM KNOWLEDGE BASE]:', secErr);
+    }
+
+// ==========================================
+    try {
+    // 11. WIDGET DESIGN & REAL-TIME LIVE PREVIEW
     // ==========================================
     const lpTitle = $('#lp-title');
     const lpWelcomeBubble = $('#lp-welcome-bubble');
@@ -520,7 +931,7 @@ jQuery(document).ready(function ($) {
         });
     }
 
-    $('#preview_chat_title, #preview_welcome_msg, #preview_proactive_text, #advisio_label_callback').on('input', updateLivePreview);
+    $('#preview_chat_title, #preview_welcome_msg, #preview_proactive_text, #advisio_label_callback, #preview_color_primary, #preview_color_header').on('input change', updateLivePreview);
     $('#preview_proactive_toggle').on('change', updateLivePreview);
 
     $('#advisio_launcher_icon').on('change', function () {
@@ -582,8 +993,9 @@ jQuery(document).ready(function ($) {
         const headerColor = $('#preview_color_header').val() || '#1E293B';
         lpHeaderBg.css('background-color', headerColor);
 
-        if ($('#preview_proactive_toggle').is(':checked')) {
-            lpProactivePill.show().text($('#preview_proactive_text').val() || 'Behöver du hjälp? 👋');
+        const proactiveVal = $('#preview_proactive_text').val();
+        if ($('#preview_proactive_toggle').length ? $('#preview_proactive_toggle').is(':checked') : (proactiveVal && proactiveVal.trim() !== '')) {
+            lpProactivePill.show().text(proactiveVal || 'Behöver du hjälp med mått eller fönsterval? 👋');
         } else {
             lpProactivePill.hide();
         }
@@ -614,12 +1026,18 @@ jQuery(document).ready(function ($) {
 
     updateLivePreview();
 
-    // ==========================================
-    // 9. INTERACTIVE LEAD FORM FIELD BUILDER (TAB 5)
+    
+    } catch (secErr) {
+        console.error('[Advisio Admin Error in 11. WIDGET DESIGN]:', secErr);
+    }
+
+// ==========================================
+    try {
+    // 12. INTERACTIVE LEAD FORM FIELD BUILDER (TAB 5)
     // ==========================================
     const fieldsInput = $('#advisio_lead_form_fields_input');
     const builderList = $('#advisio-field-builder-list');
-    const leadLivePreview = $('#advisio-lead-form-live-preview');
+    const leadLivePreview = $('#lp-lead-fields-preview, #advisio-lead-form-live-preview');
 
     let leadFields = [];
     try {
@@ -776,4 +1194,403 @@ jQuery(document).ready(function ($) {
     });
 
     renderLeadBuilderUI();
+
+    
+    } catch (secErr) {
+        console.error('[Advisio Admin Error in 12. INTERACTIVE LEAD FORM BUILDER]:', secErr);
+    }
+
+// ==========================================
+    try {
+    // 13. ADVISIO THE BRAIN (SELF-BUILDING MASTER PROMPT) (TAB 3)
+    // ==========================================
+
+    // --- STATE 1: INITIAL SETUP MODE ---
+    $(document).on('click', '.btn-save-setup-box', function (e) {
+        e.preventDefault();
+        const btn = $(this);
+        const box = btn.data('box');
+        const content = $.trim($('#setup_box_' + box + '_content').val());
+
+        if (!content) {
+            alert('Innehållet kan inte vara tomt.');
+            $('#setup_box_' + box + '_content').focus();
+            return;
+        }
+
+        btn.prop('disabled', true).text('Sparar...');
+
+        $.post(AdvisioAdmin.ajaxUrl, {
+            action: 'advisio_save_setup_box',
+            nonce: AdvisioAdmin.nonce,
+            box: box,
+            content: content
+        }, function (res) {
+            btn.prop('disabled', false).text('💾 Spara ändring');
+            if (res && res.success && res.data) {
+                const badge = $('#badge-box-' + box);
+                badge.removeClass('badge-pending').addClass('badge-ready').text('✓ Redo');
+
+                const readyCount = res.data.ready_count || 0;
+                $('#setup-ready-count').text(readyCount);
+
+                const statusBadge = $('#setup-status-badge');
+                if (readyCount >= 3) {
+                    statusBadge.addClass('all-ready');
+                    $('#btn-create-master-brain').prop('disabled', false);
+                } else {
+                    statusBadge.removeClass('all-ready');
+                    $('#btn-create-master-brain').prop('disabled', true);
+                }
+
+                btn.text('✓ Sparad!');
+                setTimeout(function () { btn.text('💾 Spara ändring'); }, 2000);
+            } else {
+                alert(res && res.data ? res.data : 'Kunde inte spara rutan.');
+            }
+        }).fail(function () {
+            btn.prop('disabled', false).text('💾 Spara ändring');
+            alert('Nätverksfel vid sparning.');
+        });
+    });
+
+    // Toggle Double Confirmation for Create Master Brain
+    $('#btn-create-master-brain').on('click', function (e) {
+        e.preventDefault();
+        $('#create-brain-confirm-box').slideToggle(200);
+    });
+
+    $('#btn-cancel-create-brain').on('click', function (e) {
+        e.preventDefault();
+        $('#create-brain-confirm-box').slideUp(200);
+    });
+
+    // Confirm Create Master Brain
+    $('#btn-confirm-create-brain').on('click', function (e) {
+        e.preventDefault();
+        const btn = $(this);
+        btn.prop('disabled', true).text('🧠 Genererar Hjärna...');
+        $('#btn-cancel-create-brain').hide();
+        $('#btn-create-master-brain').prop('disabled', true);
+
+        $('#create-brain-status').html(
+            '<div class="advisio-loading-box">' +
+            '<div class="advisio-spinner"></div>' +
+            '<p><strong>1/3:</strong> Sammanställer butikens minne och beteenderegler...</p>' +
+            '<p class="sub-step">Skickar till Gemini Flash Lite för optimering...</p>' +
+            '</div>'
+        );
+
+        $.post(AdvisioAdmin.ajaxUrl, {
+            action: 'advisio_generate_master_brain',
+            nonce: AdvisioAdmin.nonce
+        }, function (res) {
+            if (res && res.success) {
+                $('#create-brain-status').html(
+                    '<div class="advisio-status-success" style="padding:16px; font-size:15px;">' +
+                    '✓ <strong>Advisios Hjärna har skapats framgångsrikt!</strong><br>' +
+                    'Modell: ' + (res.data.model || 'Gemini Flash Lite') + ' • Sparat Master System Prompt.<br>' +
+                    'Laddar om gränssnittet till aktivt läge...' +
+                    '</div>'
+                );
+                setTimeout(function () {
+                    window.location.reload();
+                }, 1500);
+            } else {
+                btn.prop('disabled', false).text('Ja, Skapa Advisio nu');
+                $('#btn-cancel-create-brain').show();
+                $('#btn-create-master-brain').prop('disabled', false);
+                const err = res && res.data ? res.data : 'Kunde inte skapa Advisios Hjärna.';
+                $('#create-brain-status').html('<div class="advisio-status-error" style="padding:12px;">✗ ' + err + '</div>');
+            }
+        }).fail(function () {
+            btn.prop('disabled', false).text('Ja, Skapa Advisio nu');
+            $('#btn-cancel-create-brain').show();
+            $('#btn-create-master-brain').prop('disabled', false);
+            $('#create-brain-status').html('<div class="advisio-status-error" style="padding:12px;">✗ Nätverksfel vid anrop till Gemini Flash Lite.</div>');
+        });
+    });
+
+
+    // --- STATE 2: ACTIVE BRAIN MODE ---
+
+    // Toggle Update Confirm Box
+    $('#btn-update-master-brain').on('click', function (e) {
+        e.preventDefault();
+        $('#reset-brain-confirm-box').hide();
+        $('#update-brain-confirm-box').slideToggle(200);
+    });
+
+    $('#btn-cancel-update-brain').on('click', function (e) {
+        e.preventDefault();
+        $('#update-brain-confirm-box').slideUp(200);
+    });
+
+    // Confirm Update Master Brain
+    $('#btn-confirm-update-brain').on('click', function (e) {
+        e.preventDefault();
+        const btn = $(this);
+        btn.prop('disabled', true).text('🔄 Uppdaterar...');
+        $('#btn-cancel-update-brain').hide();
+        $('#btn-update-master-brain').prop('disabled', true);
+
+        $('#brain-action-status').html(
+            '<div class="advisio-loading-box">' +
+            '<div class="advisio-spinner"></div>' +
+            '<p><strong>Uppdaterar Advisio AI...</strong> Sammanställer alla nya tillägg och justerar Master Prompt via Gemini Flash Lite...</p>' +
+            '</div>'
+        );
+
+        $.post(AdvisioAdmin.ajaxUrl, {
+            action: 'advisio_update_master_brain',
+            nonce: AdvisioAdmin.nonce
+        }, function (res) {
+            if (res && res.success) {
+                $('#brain-action-status').html(
+                    '<div class="advisio-status-success" style="padding:14px;">' +
+                    '✓ <strong>Advisio AI har uppdaterats framgångsrikt!</strong><br>' +
+                    'Alla nya minnen och beteenden är nu aktiva i chatten. Laddar om...' +
+                    '</div>'
+                );
+                setTimeout(function () {
+                    window.location.reload();
+                }, 1500);
+            } else {
+                btn.prop('disabled', false).text('Ja, Uppdatera Advisio nu');
+                $('#btn-cancel-update-brain').show();
+                $('#btn-update-master-brain').prop('disabled', false);
+                const err = res && res.data ? res.data : 'Kunde inte uppdatera Advisio.';
+                $('#brain-action-status').html('<div class="advisio-status-error" style="padding:12px;">✗ ' + err + '</div>');
+            }
+        }).fail(function () {
+            btn.prop('disabled', false).text('Ja, Uppdatera Advisio nu');
+            $('#btn-cancel-update-brain').show();
+            $('#btn-update-master-brain').prop('disabled', false);
+            $('#brain-action-status').html('<div class="advisio-status-error" style="padding:12px;">✗ Nätverksfel vid uppdatering via Gemini API.</div>');
+        });
+    });
+
+    // Toggle Reset Confirm Box
+    $('#btn-reset-master-brain').on('click', function (e) {
+        e.preventDefault();
+        $('#update-brain-confirm-box').hide();
+        $('#reset-brain-confirm-box').slideToggle(200);
+    });
+
+    $('#btn-cancel-reset-brain').on('click', function (e) {
+        e.preventDefault();
+        $('#reset-brain-confirm-box').slideUp(200);
+    });
+
+    // Confirm Reset Brain
+    $('#btn-confirm-reset-brain').on('click', function (e) {
+        e.preventDefault();
+        const btn = $(this);
+        btn.prop('disabled', true).text('Nollställer...');
+        $('#btn-cancel-reset-brain').hide();
+
+        $.post(AdvisioAdmin.ajaxUrl, {
+            action: 'advisio_reset_brain',
+            nonce: AdvisioAdmin.nonce
+        }, function (res) {
+            if (res && res.success) {
+                $('#brain-action-status').html(
+                    '<div class="advisio-status-success" style="padding:14px;">' +
+                    '✓ <strong>Advisios Hjärna har nollställts.</strong> Laddar om till setup-läge...' +
+                    '</div>'
+                );
+                setTimeout(function () {
+                    window.location.reload();
+                }, 1000);
+            } else {
+                btn.prop('disabled', false).text('Ja, Nollställ och börja om');
+                $('#btn-cancel-reset-brain').show();
+                alert(res && res.data ? res.data : 'Kunde inte nollställa hjärnan.');
+            }
+        }).fail(function () {
+            btn.prop('disabled', false).text('Ja, Nollställ och börja om');
+            $('#btn-cancel-reset-brain').show();
+            alert('Nätverksfel vid nollställning.');
+        });
+    });
+
+    // Real-time Detection of '-' (Removal Rule) in Behavior Boxes 1-3
+    $(document).on('input keyup', '.input-pending-addition', function () {
+        const input = $(this);
+        const box = parseInt(input.data('box'), 10);
+        const val = $.trim(input.val());
+        const hintEl = input.siblings('.removal-hint');
+
+        if (box <= 3 && val.startsWith('-')) {
+            if (!hintEl.length) {
+                input.after('<span class="removal-hint" style="display:block; color:#f59e0b; font-size:12px; margin-top:4px;">💡 Börjar med minus (-) = Tas bort vid nästa uppdatering</span>');
+            } else {
+                hintEl.show();
+            }
+        } else {
+            if (hintEl.length) hintEl.hide();
+        }
+    });
+
+    // Enter key triggers Add Pending Addition
+    $(document).on('keydown', '.input-pending-addition', function (e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            const box = $(this).data('box');
+            $('.btn-add-pending-addition[data-box="' + box + '"]').trigger('click');
+        }
+    });
+
+    // Add Pending Addition to Box 1, 2, 3
+    $(document).on('click', '.btn-add-pending-addition', function (e) {
+        e.preventDefault();
+        const btn = $(this);
+        const box = btn.data('box');
+        const input = $('.input-pending-addition[data-box="' + box + '"]');
+        const text = $.trim(input.val());
+
+        if (!text) {
+            alert('Vänligen skriv en regel eller instruktion att lägga till.');
+            input.focus();
+            return;
+        }
+
+        btn.prop('disabled', true).text('Sparar...');
+
+        $.post(AdvisioAdmin.ajaxUrl, {
+            action: 'advisio_add_pending_addition',
+            nonce: AdvisioAdmin.nonce,
+            box: box,
+            text: text
+        }, function (res) {
+            btn.prop('disabled', false).text('➕ Lägg till');
+            if (res && res.success && res.data) {
+                input.val('');
+                input.siblings('.removal-hint').hide();
+
+                const item = res.data.item;
+                const list = $('#pending-list-box-' + box);
+                list.find('.no-items-placeholder').remove();
+
+                const isRemoval = item.is_removal;
+                const row = $(
+                    '<div class="dna-item-row pending-item ' + (isRemoval ? 'item-removal' : '') + '" data-id="' + item.id + '">' +
+                    '<span class="dna-item-text">' +
+                    (isRemoval ? '<span class="badge-removal">TAS BORT:</span> ' : '') +
+                    $('<div>').text(item.text).html() +
+                    '</span>' +
+                    '<div class="dna-item-actions">' +
+                    '<button type="button" class="btn-delete-pending-item" data-box="' + box + '" data-id="' + item.id + '" title="Ta bort">🗑️</button>' +
+                    '</div>' +
+                    '</div>'
+                );
+                list.append(row);
+
+                // Update pending total badge
+                updateTotalPendingCount(res.data.total_pending);
+            } else {
+                alert(res && res.data ? res.data : 'Kunde inte lägga till instruktionen.');
+            }
+        }).fail(function () {
+            btn.prop('disabled', false).text('➕ Lägg till');
+            alert('Nätverksfel vid sparning.');
+        });
+    });
+
+    // Delete Pending Addition
+    $(document).on('click', '.btn-delete-pending-item', function (e) {
+        e.preventDefault();
+        const btn = $(this);
+        const box = btn.data('box');
+        const id = btn.data('id');
+        if (!id) return;
+
+        btn.prop('disabled', true).text('⏳');
+
+        $.post(AdvisioAdmin.ajaxUrl, {
+            action: 'advisio_delete_pending_addition',
+            nonce: AdvisioAdmin.nonce,
+            box: box,
+            id: id
+        }, function (res) {
+            if (res && res.success) {
+                const row = btn.closest('.dna-item-row');
+                const list = row.parent();
+                row.fadeOut(200, function () {
+                    $(this).remove();
+                    if (list.children('.dna-item-row').length === 0) {
+                        list.html('<p class="desc no-items-placeholder">Inga väntande ändringar.</p>');
+                    }
+                });
+
+                if (typeof res.data.total_pending !== 'undefined') {
+                    updateTotalPendingCount(res.data.total_pending);
+                }
+            } else {
+                btn.prop('disabled', false).text('🗑️');
+                alert(res && res.data ? res.data : 'Kunde inte ta bort posten.');
+            }
+        }).fail(function () {
+            btn.prop('disabled', false).text('🗑️');
+            alert('Nätverksfel vid borttagning.');
+        });
+    });
+
+    function updateTotalPendingCount(count) {
+        $('#brain-pending-total-badge').text(count);
+        const updateBtn = $('#btn-update-master-brain');
+        if (count > 0) {
+            updateBtn.addClass('advisio-btn-pulse');
+        } else {
+            updateBtn.removeClass('advisio-btn-pulse');
+        }
+    }
+
+    } catch (secErr) {
+        console.error('[Advisio Admin Error in 13. ADVISIO THE BRAIN]:', secErr);
+    }
+
+// ==========================================
+    try {
+    // 14. CAPTURED LEADS MANAGEMENT (TAB 5)
+    // ==========================================
+    $(document).on('click', '.btn-delete-lead', function () {
+        const btn = $(this);
+        const leadId = btn.data('id');
+        if (!leadId) return;
+
+        if (!confirm('Vill du radera detta lead och dess AI-sammanfattning permanent?')) {
+            return;
+        }
+
+        btn.prop('disabled', true).text('⏳');
+
+        $.post(AdvisioAdmin.ajaxUrl, {
+            action: 'advisio_delete_lead',
+            nonce: AdvisioAdmin.nonce,
+            id: leadId
+        }, function (res) {
+            if (res && res.success) {
+                $('#lead-row-' + leadId).fadeOut(250, function () {
+                    $(this).remove();
+                    const remaining = $('.advisio-leads-table tbody tr').length;
+                    if (remaining === 0) {
+                        $('.advisio-leads-table-wrap').html('<p class="desc" style="padding:24px 0; text-align:center;">Inga förfrågningar eller leads har fångats in än.</p>');
+                    }
+                });
+            } else {
+                btn.prop('disabled', false).text('🗑️');
+                alert(res && res.data ? res.data : 'Kunde inte radera lead.');
+            }
+        }).fail(function () {
+            btn.prop('disabled', false).text('🗑️');
+            alert('Nätverksfel vid radering av lead.');
+        });
+    });
+
+
+    } catch (secErr) {
+        console.error('[Advisio Admin Error in 14. CAPTURED LEADS MANAGEMENT]:', secErr);
+    }
+
 });
