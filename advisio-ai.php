@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Advisio AI
  * Description: Advisio AI chat service — Guided Commerce & Intelligent Support by Area 404.
- * Version: 4.3.1
+ * Version: 4.0.0
  * Author: Area 404
  * Text Domain: advisio-ai
  */
@@ -11,7 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'ADVISIO_AI_VERSION', '4.3.1' );
+define( 'ADVISIO_AI_VERSION', '4.0.0' );
 define( 'ADVISIO_AI_PLUGIN_FILE', __FILE__ );
 define( 'ADVISIO_AI_PLUGIN_BASENAME', plugin_basename( __FILE__ ) );
 define( 'ADVISIO_AI_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
