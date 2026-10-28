@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Advisio AI
  * Description: Advisio AI chat service — Guided Commerce & Intelligent Support by Area 404.
- * Version: 4.0.0
+ * Version: 4.0.1
  * Author: Area 404
  * Text Domain: advisio-ai
  */
@@ -11,7 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'ADVISIO_AI_VERSION', '4.0.0' );
+define( 'ADVISIO_AI_VERSION', '4.0.1' );
 define( 'ADVISIO_AI_PLUGIN_FILE', __FILE__ );
 define( 'ADVISIO_AI_PLUGIN_BASENAME', plugin_basename( __FILE__ ) );
 define( 'ADVISIO_AI_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
@@ -52,6 +52,9 @@ class Advisio_AI_GitHub_Updater {
         }
 
         if ( ! is_null( $this->github_response ) ) {
+            if ( is_object( $this->github_response ) ) {
+                $this->github_response = (array) $this->github_response;
+            }
             return $this->github_response;
         }
 
@@ -59,8 +62,14 @@ class Advisio_AI_GitHub_Updater {
         $cached        = get_transient( $transient_key );
 
         if ( false !== $cached ) {
-            $this->github_response = $cached;
-            return $this->github_response;
+            if ( is_object( $cached ) ) {
+                $cached = (array) $cached;
+            }
+            if ( is_array( $cached ) && ! empty( $cached['package'] ) && ! empty( $cached['version'] ) ) {
+                $this->github_response = $cached;
+                return $this->github_response;
+            }
+            delete_transient( $transient_key );
         }
 
         $url     = "https://api.github.com/repos/{$this->repo}/releases/latest";
@@ -86,14 +95,21 @@ class Advisio_AI_GitHub_Updater {
         $body = wp_remote_retrieve_body( $response );
         $data = json_decode( $body, true );
 
-        if ( empty( $data ) || ! isset( $data['tag_name'] ) ) {
+        if ( is_object( $data ) ) {
+            $data = (array) $data;
+        }
+
+        if ( empty( $data ) || ! is_array( $data ) || ! isset( $data['tag_name'] ) ) {
             set_transient( $transient_key, false, 2 * HOUR_IN_SECONDS );
             return false;
         }
 
         $asset_url = '';
-        if ( ! empty( $data['assets'] ) && is_array( $data['assets'] ) ) {
+        if ( ! empty( $data['assets'] ) && ( is_array( $data['assets'] ) || is_object( $data['assets'] ) ) ) {
             foreach ( $data['assets'] as $asset ) {
+                if ( is_object( $asset ) ) {
+                    $asset = (array) $asset;
+                }
                 if ( isset( $asset['browser_download_url'] ) && preg_match( '/\.zip$/i', $asset['browser_download_url'] ) ) {
                     $asset_url = $asset['browser_download_url'];
                     break;
@@ -120,12 +136,20 @@ class Advisio_AI_GitHub_Updater {
     }
 
     public function check_for_update( $transient ) {
-        if ( empty( $transient->checked ) ) {
+        if ( empty( $transient ) || ! is_object( $transient ) || empty( $transient->checked ) ) {
             return $transient;
         }
 
         $release = $this->fetch_latest_release();
-        if ( ! $release || empty( $release['package'] ) ) {
+        if ( empty( $release ) ) {
+            return $transient;
+        }
+
+        if ( is_object( $release ) ) {
+            $release = (array) $release;
+        }
+
+        if ( ! is_array( $release ) || empty( $release['package'] ) || empty( $release['version'] ) ) {
             return $transient;
         }
 
@@ -135,7 +159,7 @@ class Advisio_AI_GitHub_Updater {
                 'slug'          => dirname( $this->plugin_slug ),
                 'plugin'        => $this->plugin_slug,
                 'new_version'   => $release['version'],
-                'url'           => $release['html_url'],
+                'url'           => isset( $release['html_url'] ) ? $release['html_url'] : '',
                 'package'       => $release['package'],
                 'icons'         => array(),
                 'banners'       => array(),
@@ -144,6 +168,10 @@ class Advisio_AI_GitHub_Updater {
                 'requires_php'  => '7.4',
                 'compatibility' => new stdClass(),
             );
+
+            if ( ! isset( $transient->response ) || ! is_array( $transient->response ) ) {
+                $transient->response = array();
+            }
 
             $transient->response[ $this->plugin_slug ] = (object) $plugin_data;
         }
@@ -161,7 +189,15 @@ class Advisio_AI_GitHub_Updater {
         }
 
         $release = $this->fetch_latest_release();
-        if ( ! $release ) {
+        if ( empty( $release ) ) {
+            return $result;
+        }
+
+        if ( is_object( $release ) ) {
+            $release = (array) $release;
+        }
+
+        if ( ! is_array( $release ) || empty( $release['version'] ) ) {
             return $result;
         }
 
@@ -171,10 +207,10 @@ class Advisio_AI_GitHub_Updater {
             'version'       => $release['version'],
             'author'        => '<a href="#">Area 404</a>',
             'homepage'      => 'https://area404.se',
-            'download_link' => $release['package'],
+            'download_link' => isset( $release['package'] ) ? $release['package'] : '',
             'sections'      => array(
                 'description' => 'Advisio AI chat service — Guided Commerce & Intelligent Support for WooCommerce.',
-                'changelog'   => nl2br( esc_html( $release['body'] ) ),
+                'changelog'   => isset( $release['body'] ) ? nl2br( esc_html( $release['body'] ) ) : '',
             ),
         );
 
@@ -183,8 +219,13 @@ class Advisio_AI_GitHub_Updater {
 
     public function after_install( $response, $hook_extra, $result ) {
         global $wp_filesystem;
+        if ( is_wp_error( $result ) || ! is_array( $result ) || empty( $result['destination'] ) ) {
+            return $result;
+        }
         $install_directory = plugin_dir_path( $this->plugin_file );
-        $wp_filesystem->move( $result['destination'], $install_directory );
+        if ( $wp_filesystem ) {
+            $wp_filesystem->move( $result['destination'], $install_directory );
+        }
         $result['destination'] = $install_directory;
 
         if ( ! function_exists( 'is_plugin_active' ) && defined( 'ABSPATH' ) && file_exists( ABSPATH . 'wp-admin/includes/plugin.php' ) ) {
