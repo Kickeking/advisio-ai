@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Advisio AI
  * Description: Advisio AI chat service — Guided Commerce & Intelligent Support by Area 404.
- * Version: 5.0.0
+ * Version: 5.0.1
  * Author: Area 404
  * Text Domain: advisio-ai
  */
@@ -11,7 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'ADVISIO_AI_VERSION', '5.0.0' );
+define( 'ADVISIO_AI_VERSION', '5.0.1' );
 define( 'ADVISIO_AI_PLUGIN_FILE', __FILE__ );
 define( 'ADVISIO_AI_PLUGIN_BASENAME', plugin_basename( __FILE__ ) );
 define( 'ADVISIO_AI_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
@@ -6484,6 +6484,7 @@ Your task:
  * Called ONLY when opening the Advisio AI admin page or running an Advisio AJAX action.
  * Never called on activation or general frontend page loads.
  */
+if ( ! function_exists( 'advisio_ensure_tables_ready' ) ) {
 function advisio_ensure_tables_ready() {
     static $ready = false;
     if ( $ready ) {
@@ -6590,6 +6591,7 @@ function advisio_ensure_tables_ready() {
         // Fault-tolerant: never break the site on table checks
     }
 }
+} // end if ! function_exists advisio_ensure_tables_ready
 
 /**
  * Central helper: Call Gemini API with automatic model resolution and 404 recovery.
@@ -6600,16 +6602,20 @@ function advisio_ensure_tables_ready() {
  * @param int    $max_tokens        Max output tokens (default 1200).
  * @return array Array with success, text, model, and error.
  */
+if ( ! function_exists( 'advisio_call_gemini_api' ) ) {
 function advisio_call_gemini_api( $system_instruction, $user_prompt, $temperature = 0.35, $max_tokens = 1200 ) {
     return advisio_ai()->execute_gemini_api( $system_instruction, $user_prompt, $temperature, $max_tokens );
 }
+}
 
+if ( ! function_exists( 'advisio_ai' ) ) {
 function advisio_ai() {
     static $instance = null;
     if ( null === $instance ) {
         $instance = new Advisio_AI();
     }
     return $instance;
+}
 }
 
 // Unconditionally instantiate on file load so all hooks and menus are active

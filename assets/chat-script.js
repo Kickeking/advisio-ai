@@ -15,15 +15,85 @@ document.addEventListener('DOMContentLoaded', function () {
         return;
     }
 
-    const sessionId = 'adv_' + Math.random().toString(36).substring(2, 10) + '_' + Date.now().toString(36);
+    // Persist session ID in sessionStorage across page loads
+    let sessionId = '';
+    try {
+        sessionId = sessionStorage.getItem('advisio_session_id');
+    } catch (e) {}
+    if (!sessionId) {
+        sessionId = 'adv_' + Math.random().toString(36).substring(2, 10) + '_' + Date.now().toString(36);
+        try {
+            sessionStorage.setItem('advisio_session_id', sessionId);
+        } catch (e) {}
+    }
+
     let chatHistory = [];
     let hasShownInitialWelcome = false;
     let isRequestInFlight = false;
     let capturedEmailFromChat = '';
 
+    function saveChatHistory() {
+        try {
+            sessionStorage.setItem('advisio_chat_history', JSON.stringify(chatHistory));
+        } catch (e) {}
+    }
+
+    function clearChatSession() {
+        try {
+            sessionStorage.removeItem('advisio_session_id');
+            sessionStorage.removeItem('advisio_chat_history');
+            sessionStorage.removeItem('advisio_chat_open');
+        } catch (e) {}
+        chatHistory = [];
+        hasShownInitialWelcome = false;
+        chatBody.innerHTML = '';
+    }
+
+    const resetChatBtn = document.getElementById('advisio-reset-chat') || document.getElementById('advisio-clear-chat');
+    if (resetChatBtn) {
+        resetChatBtn.addEventListener('click', function () {
+            clearChatSession();
+            openChatWindow();
+        });
+    }
+
     // Render Dynamic Lead Form Fields from Admin Builder configuration
     const leadFieldsConfig = Array.isArray(AdvisioChat.leadFields) ? AdvisioChat.leadFields : [];
     renderDynamicLeadFields();
+
+    // Restore chat history from sessionStorage if it exists (avoids duplicate welcome message)
+    try {
+        const savedHistory = sessionStorage.getItem('advisio_chat_history');
+        if (savedHistory) {
+            const parsed = JSON.parse(savedHistory);
+            if (Array.isArray(parsed) && parsed.length > 0) {
+                chatHistory = parsed;
+                hasShownInitialWelcome = true;
+                chatHistory.forEach(function (msg, idx) {
+                    const sender = (msg.role === 'user') ? 'user' : 'bot';
+                    const isLast = (idx === chatHistory.length - 1);
+                    const suggestions = isLast && Array.isArray(msg.suggestions) ? msg.suggestions : [];
+                    appendMessage(sender, msg.content, suggestions, false);
+
+                    if (msg.role === 'user' && !capturedEmailFromChat) {
+                        const emailMatch = String(msg.content).match(/([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/);
+                        if (emailMatch && emailMatch[1]) {
+                            applyProgressiveProfiling(emailMatch[1]);
+                        }
+                    }
+                });
+            }
+        }
+    } catch (e) {}
+
+    // Auto-open chat window on page load if previously open and screen width > 768px
+    let isChatOpen = false;
+    try {
+        isChatOpen = (sessionStorage.getItem('advisio_chat_open') === 'true');
+    } catch (e) {}
+    if (isChatOpen && window.innerWidth > 768) {
+        openChatWindow();
+    }
 
     // Preferred Contact Method pill switching
     const contactPills = document.querySelectorAll('.advisio-contact-pill');
@@ -60,6 +130,9 @@ document.addEventListener('DOMContentLoaded', function () {
      */
     function openChatWindow() {
         chatWindow.classList.remove('advisio-hidden');
+        try {
+            sessionStorage.setItem('advisio_chat_open', 'true');
+        } catch (e) {}
         if (proactiveBubble) {
             proactiveBubble.classList.add('advisio-hidden');
         }
@@ -78,11 +151,17 @@ document.addEventListener('DOMContentLoaded', function () {
             openChatWindow();
         } else {
             chatWindow.classList.add('advisio-hidden');
+            try {
+                sessionStorage.setItem('advisio_chat_open', 'false');
+            } catch (e) {}
         }
     });
 
     closeBtn.addEventListener('click', function () {
         chatWindow.classList.add('advisio-hidden');
+        try {
+            sessionStorage.setItem('advisio_chat_open', 'false');
+        } catch (e) {}
     });
 
     sendBtn.addEventListener('click', function () {
@@ -199,6 +278,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
         appendMessage('user', text, [], false);
         chatHistory.push({ role: 'user', content: text });
+        saveChatHistory();
 
         showTypingIndicator();
 
@@ -240,10 +320,9 @@ document.addEventListener('DOMContentLoaded', function () {
                     }
 
                     const cleanReply = reply.replace(suggestionRegex, '').trim();
-                    chatHistory.push({ role: 'model', content: cleanReply });
-
-                    // Enforce Measurement Question Rule & Mandatory "Not Sure" Option
                     const processedSuggestions = normalizeContextSuggestions(cleanReply, rawSuggestions);
+                    chatHistory.push({ role: 'model', content: cleanReply, suggestions: processedSuggestions });
+                    saveChatHistory();
                     appendMessage('bot', cleanReply, processedSuggestions, false);
                 } else {
                     const errMsg = (data && data.data) ? data.data : 'Ett tillfälligt fel uppstod. Försök gärna igen.';
