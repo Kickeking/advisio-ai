@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Advisio AI
  * Description: Advisio AI chat service — Guided Commerce & Intelligent Support by Area 404.
- * Version: 5.0.1
+ * Version: 5.0.2
  * Author: Area 404
  * Text Domain: advisio-ai
  */
@@ -11,7 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'ADVISIO_AI_VERSION', '5.0.1' );
+define( 'ADVISIO_AI_VERSION', '5.0.2' );
 define( 'ADVISIO_AI_PLUGIN_FILE', __FILE__ );
 define( 'ADVISIO_AI_PLUGIN_BASENAME', plugin_basename( __FILE__ ) );
 define( 'ADVISIO_AI_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
@@ -431,6 +431,7 @@ class Advisio_AI {
             'advisio_approved_strategies',
             'advisio_proactive',
             'advisio_proactive_text',
+            'advisio_proactive_delay',
             'advisio_chat_title',
             'advisio_welcome_msg',
             'advisio_launcher_icon',
@@ -1818,7 +1819,7 @@ class Advisio_AI {
                                         </div>
                                     </div>
 
-                                    <div class="pending-additions-wrap">
+                                    <div class="pending-additions-wrap pending-strategies-box" id="box-4-pending-strategies">
                                         <span class="sub-label">🟡 Väntande godkända strategier (Från Dashboard)</span>
                                         <p class="desc helper-text">När du godkänner förslag i Flik 1 (Dashboard) hamnar de här och bakas in vid nästa uppdatering.</p>
                                         <div class="pending-list" id="pending-list-box-4">
@@ -1903,8 +1904,28 @@ class Advisio_AI {
                                     <tr>
                                         <th>Proaktiv Hälsningsbubbla</th>
                                         <td>
-                                            <input type="text" name="advisio_proactive_text" id="preview_proactive_text" value="<?php echo esc_attr( get_option( 'advisio_proactive_text', 'Behöver du hjälp med mått eller fönsterval? 👋' ) ); ?>" class="advisio-input" placeholder="Hälsningstext...">
+                                            <div style="margin-bottom:8px;">
+                                                <input type="hidden" name="advisio_proactive" value="0">
+                                                <label style="font-weight:600; cursor:pointer;">
+                                                    <input type="checkbox" name="advisio_proactive" id="preview_proactive_toggle" value="1" <?php checked( '0' !== (string) get_option( 'advisio_proactive', '1' ) ); ?>>
+                                                    Aktivera proaktiv hälsningsbubbla
+                                                </label>
+                                            </div>
+                                            <input type="text" name="advisio_proactive_text" id="preview_proactive_text" value="<?php echo esc_attr( get_option( 'advisio_proactive_text', 'Behöver du hjälp med mått eller fönsterval? 👋' ) ); ?>" class="advisio-input" placeholder="Hälsningstext..." style="margin-bottom:8px;">
                                             <p class="desc helper-text">Liten pratbubbla som svävar intill launcher-knappen på webbplatsen.</p>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <th>Fördröjning för Hälsningsbubbla</th>
+                                        <td>
+                                            <?php $proactive_delay = intval( get_option( 'advisio_proactive_delay', 5 ) ); ?>
+                                            <select name="advisio_proactive_delay" id="advisio_proactive_delay" class="advisio-input">
+                                                <option value="3" <?php selected( $proactive_delay, 3 ); ?>>3 sekunder</option>
+                                                <option value="5" <?php selected( $proactive_delay, 5 ); ?>>5 sekunder</option>
+                                                <option value="10" <?php selected( $proactive_delay, 10 ); ?>>10 sekunder</option>
+                                                <option value="15" <?php selected( $proactive_delay, 15 ); ?>>15 sekunder</option>
+                                            </select>
+                                            <p class="desc helper-text">Välj hur många sekunder efter att sidan laddats som den proaktiva bubblan ska visas (3, 5, 10 eller 15 sekunder).</p>
                                         </td>
                                     </tr>
                                 </table>
@@ -5827,7 +5848,8 @@ $history = json_decode( $history_json, true );
             'ajaxUrl'                 => admin_url( 'admin-ajax.php' ),
             'nonce'                   => wp_create_nonce( 'advisio_chat_nonce' ),
             'productId'               => ( function_exists( 'is_product' ) && is_product() ) ? get_the_ID() : 0,
-            'proactive'               => (int) get_option( 'advisio_proactive', 1 ),
+            'proactive'               => ( '0' !== (string) get_option( 'advisio_proactive', '1' ) ) ? 1 : 0,
+            'proactiveDelay'          => max( 1, intval( get_option( 'advisio_proactive_delay', 5 ) ) ),
             'welcomeMsg'              => get_option( 'advisio_welcome_msg', 'Hej! Välkommen till vår kundtjänst. Hur kan jag hjälpa dig idag?' ),
             'cbLabel'                 => get_option( 'advisio_label_callback', '📞 Bli kontaktad av en säljare' ),
             'leadHeader'              => get_option( 'advisio_label_lead_header', 'Fyll i dina uppgifter så återkommer en rådgivare:' ),
@@ -5846,7 +5868,10 @@ $history = json_decode( $history_json, true );
      */
     public function render_chat_widget() {
         $title          = get_option( 'advisio_chat_title', 'Advisio AI Kundtjänst' );
-        $proactive_text = get_option( 'advisio_proactive_text', 'Behöver du hjälp med mått eller fönsterval? 👋' );
+        $proactive_text = get_option( 'advisio_proactive_text' );
+        if ( empty( $proactive_text ) ) {
+            $proactive_text = 'Behöver du hjälp med mått eller fönsterval? 👋';
+        }
         $icon_type      = get_option( 'advisio_launcher_icon', 'preset-1' );
         $icon_url       = get_option( 'advisio_custom_icon' );
 

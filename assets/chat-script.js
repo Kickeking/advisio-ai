@@ -111,12 +111,15 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 
     // Proactive Greeting Bubble
-    if (parseInt(AdvisioChat.proactive, 10) === 1 && proactiveBubble) {
+    const isProactiveEnabled = (parseInt(AdvisioChat.proactive, 10) === 1 || AdvisioChat.proactive === true || AdvisioChat.proactive === '1');
+    const delaySec = parseInt(AdvisioChat.proactiveDelay, 10) || 5;
+
+    if (isProactiveEnabled && proactiveBubble) {
         setTimeout(function () {
-            if (chatWindow.classList.contains('advisio-hidden')) {
+            if (chatWindow && chatWindow.classList.contains('advisio-hidden')) {
                 proactiveBubble.classList.remove('advisio-hidden');
             }
-        }, 5000);
+        }, delaySec * 1000);
 
         proactiveBubble.addEventListener('click', function () {
             openChatWindow();
